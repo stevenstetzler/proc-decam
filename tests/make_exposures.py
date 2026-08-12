@@ -42,12 +42,52 @@ def find_fits_files(directory):
     return sorted(files)
 
 
+def _create_verified_symlink(filepath, dest):
+    """
+    Create (or refresh) a symlink at *dest* pointing to *filepath*, then
+    verify it actually resolves to real, readable content.
+
+    The LSST pipeline reads image data through this symlink, so a broken
+    or stale one doesn't fail here -- it surfaces much later as a cryptic
+    "could not extract observation metadata" warning deep inside the
+    ingest task, with no indication that the symlink was ever the problem.
+    Failing fast here instead gives an immediate, actionable error.
+    """
+    if not os.path.isfile(filepath):
+        raise FileNotFoundError(
+            f"Source FITS file does not exist or is not a regular file: "
+            f"{filepath}"
+        )
+
+    # os.path.exists() follows symlinks, so a stale/dangling symlink left
+    # at `dest` (e.g. from a previous run) would look "missing" and then
+    # make os.symlink() below fail with FileExistsError. os.path.lexists()
+    # sees the dirent itself, so we can clear it and always end up with a
+    # fresh link to the current source file.
+    if os.path.lexists(dest):
+        os.remove(dest)
+    os.symlink(filepath, dest)
+
+    if not os.path.isfile(dest):
+        raise RuntimeError(
+            f"Symlink {dest} -> {filepath} does not resolve to a regular "
+            f"file"
+        )
+    if not os.access(dest, os.R_OK):
+        raise RuntimeError(f"Symlink {dest} -> {filepath} is not readable")
+    if not os.path.samefile(dest, filepath):
+        raise RuntimeError(f"Symlink {dest} does not point back at {filepath}")
+    if os.path.getsize(dest) == 0:
+        raise RuntimeError(f"Symlink {dest} -> {filepath} resolves to an empty file")
+
+
 def add_files(rows, downloaded_rows, filepaths, obs_type, proc_type, night,
               image_dir):
     """
     For each FITS file in *filepaths*:
       - compute md5sum
-      - create a symlink inside *image_dir* preserving the original basename
+      - create a verified symlink inside *image_dir* preserving the
+        original basename
       - append a row to *rows* (exposures table)
       - append a row to *downloaded_rows* (downloaded table)
     """
@@ -56,8 +96,7 @@ def add_files(rows, downloaded_rows, filepaths, obs_type, proc_type, night,
         md5 = compute_md5(filepath)
         basename = os.path.basename(filepath)
         dest = os.path.join(image_dir, basename)
-        if not os.path.exists(dest):
-            os.symlink(filepath, dest)
+        _create_verified_symlink(filepath, dest)
         rows.append(
             {
                 "obs_type": obs_type,
