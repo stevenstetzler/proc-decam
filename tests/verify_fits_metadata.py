@@ -7,22 +7,36 @@ things:
   1. astropy.io.fits can open the file and its header is actually
      populated -- i.e. this is a plain file-access / file-content check,
      completely independent of the LSST pipeline.
-  2. astro_metadata_translator -- the same library lsst.obs.base's raw
-     ingest task uses under the hood to turn a FITS header into an
-     ObservationInfo/exposure record -- can translate that header.
+  2. Every per-detector header astro_metadata_translator would hand to
+     lsst.obs.base.RawIngestTask can be translated into an ObservationInfo.
 
 Splitting these into two separate checks isolates *where* a problem is:
 if (1) fails, it's a file-access/corruption problem upstream of anything
 LSST-specific (bad symlink, truncated LFS pull, etc.). If (1) succeeds but
 (2) fails, the file itself is fine and the problem is specific to how the
-pipeline's metadata translation reads these headers (wrong translator,
-missing/unexpected keywords, etc.).
+pipeline's metadata translation reads these headers.
 
-Since DECam raw files are multi-extension FITS (a primary HDU carrying the
-observation-level header, plus one compressed-image extension per CCD),
-translation is attempted twice: once against the primary header alone,
-and once against the primary header merged with the first extension's
-header, since instrument translators vary in which they expect.
+Check (2) deliberately mirrors lsst.obs.base.RawIngestTask.extractMetadata
+rather than doing a single translation attempt:
+
+    header = readMetadata(path, 0)
+    translator_class = MetadataTranslator.determine_translator(header, ...)
+    headers = list(translator_class.determine_translatable_headers(path, header))
+    datasets = [self._calculate_dataset_info(h, filename) for h in headers]
+
+For DECam, determine_translatable_headers() (see
+astro_metadata_translator.translators.decam.DecamTranslator) walks *every*
+HDU that carries a CCDNUM <= 62 (i.e. every science detector, skipping
+guide CCDs), merges each with the primary header, and yields one header
+per detector -- commonly around 60 for a full-focal-plane exposure. Because
+extractMetadata builds datasets for all of them in a single list
+comprehension with no per-header try/except, a single bad detector header
+anywhere in the file fails metadata extraction for the *whole file*, which
+is exactly the generic "Could not extract observation metadata" warning
+ingest logs with no further detail. A check against only the primary or
+primary+first-extension header (as an earlier version of this script did)
+can pass while this file-wide check fails, if the problem is on some other
+detector extension.
 
 Usage:
     python tests/verify_fits_metadata.py path/to/downloaded_exposures.ecsv
@@ -46,6 +60,7 @@ _INTERESTING_KEYS = (
     "FILTER",
     "PROPID",
     "DTINSTRU",
+    "EXPNUM",
 )
 
 
@@ -82,58 +97,62 @@ def check_fits_header(path):
         return False, f"{type(e).__name__}: {e}"
 
 
-def _merged_header(primary, extension):
-    """Return a copy of *primary* with *extension*'s cards layered on top."""
-    merged = primary.copy()
-    merged.extend(extension, update=True)
-    return merged
-
-
-def check_metadata_translation(path):
+def check_all_detector_headers(path):
     """
-    Run astro_metadata_translator over *path*'s header(s), mirroring what
-    LSST's raw-ingest task does to turn a FITS header into an exposure
-    record.
+    Reproduce lsst.obs.base.RawIngestTask.extractMetadata's metadata pass
+    over *path*: determine the translator class from the primary header,
+    ask it for every per-detector header it would hand to ingest, and try
+    to build an ObservationInfo from each one.
 
-    Tries the primary header alone, then the primary header merged with
-    the first extension's header (if present), since which one an
-    instrument's translator expects can vary.
-
-    Returns a list of (attempt_label, ok, message) tuples.
+    Returns (translator_available, per_detector_results, error) where:
+      - translator_available is False (with an explanatory error) if
+        astro_metadata_translator itself couldn't be imported/used at all
+      - per_detector_results is a list of (label, ok, message) tuples, one
+        per header determine_translatable_headers() yielded
+      - error is set if determining the translator or the header list
+        itself failed (i.e. we never got as far as per-detector headers)
     """
     try:
-        from astro_metadata_translator import ObservationInfo
+        from astro_metadata_translator import MetadataTranslator, ObservationInfo
     except ImportError as e:
-        return [(None, None, f"astro_metadata_translator not importable: {e}")]
+        return False, [], f"astro_metadata_translator not importable: {e}"
 
-    results = []
     try:
         with fits.open(path) as hdul:
-            primary = hdul[0].header
-            attempts = [("primary header", primary)]
-            if len(hdul) > 1:
-                attempts.append(
-                    ("primary+extension[1] header", _merged_header(primary, hdul[1].header))
-                )
+            primary_header = hdul[0].header
     except Exception as e:
-        return [("open", False, f"{type(e).__name__}: {e}")]
+        return True, [], f"could not open file: {type(e).__name__}: {e}"
 
-    for label, header in attempts:
+    try:
+        translator_class = MetadataTranslator.determine_translator(primary_header, filename=path)
+    except Exception as e:
+        return True, [], f"determine_translator(primary header) failed: {type(e).__name__}: {e}"
+
+    try:
+        headers = list(translator_class.determine_translatable_headers(path, primary_header))
+    except Exception as e:
+        return True, [], f"determine_translatable_headers() failed: {type(e).__name__}: {e}"
+
+    if not headers:
+        return True, [], "determine_translatable_headers() yielded no per-detector headers"
+
+    results = []
+    for i, header in enumerate(headers):
+        ccdnum = header.get("CCDNUM", "?")
+        label = f"header {i + 1}/{len(headers)} (CCDNUM={ccdnum})"
         try:
             obs_info = ObservationInfo(header, filename=path)
         except Exception as e:
             results.append((label, False, f"{type(e).__name__}: {e}"))
             continue
-        summary = (
-            f"instrument={obs_info.instrument!r} "
-            f"obs_id={obs_info.observation_id!r} "
-            f"obs_type={obs_info.observation_type!r} "
-            f"date_obs={obs_info.datetime_begin!r} "
-            f"detector={obs_info.detector_num!r}"
+        results.append(
+            (
+                label,
+                True,
+                f"obs_type={obs_info.observation_type!r} exposure_id={obs_info.exposure_id!r}",
+            )
         )
-        results.append((label, True, summary))
-
-    return results
+    return True, results, None
 
 
 def main():
@@ -154,7 +173,7 @@ def main():
         sys.exit(2)
 
     fits_failures = []
-    translator_failures = []
+    translator_failures = []  # (path, reason) for whole-file-level failures
     translator_available = True
 
     for row in table:
@@ -162,30 +181,42 @@ def main():
         print(f"\n=== {path} ===")
 
         ok, msg = check_fits_header(path)
-        print(f"  fits.open:            {'OK' if ok else 'FAIL'} - {msg}")
+        print(f"  fits.open:                  {'OK' if ok else 'FAIL'} - {msg}")
         if not ok:
             fits_failures.append((path, msg))
             continue  # nothing to translate if the file itself won't open
 
-        any_translation_ok = False
-        for label, t_ok, t_msg in check_metadata_translation(path):
-            if t_ok is None:
-                translator_available = False
-                print(f"  metadata_translator:  SKIPPED - {t_msg}")
-                continue
-            print(f"  metadata_translator [{label}]: {'OK' if t_ok else 'FAIL'} - {t_msg}")
-            any_translation_ok = any_translation_ok or t_ok
+        available, results, error = check_all_detector_headers(path)
+        if not available:
+            translator_available = False
+            print(f"  per-detector translation:   SKIPPED - {error}")
+            continue
+        if error is not None:
+            print(f"  per-detector translation:   FAIL - {error}")
+            translator_failures.append((path, error))
+            continue
 
-        if translator_available and not any_translation_ok:
-            translator_failures.append(path)
+        n_ok = sum(1 for _, ok, _ in results if ok)
+        n_bad = len(results) - n_ok
+        if n_bad == 0:
+            print(f"  per-detector translation:   OK - all {len(results)} detector header(s) translated")
+        else:
+            print(
+                f"  per-detector translation:   FAIL - {n_bad}/{len(results)} detector header(s) "
+                f"did not translate (RawIngestTask fails the whole file when this happens):"
+            )
+            for label, ok, msg in results:
+                if not ok:
+                    print(f"    - {label}: {msg}")
+            translator_failures.append((path, f"{n_bad}/{len(results)} detector headers failed"))
 
     n_total = len(table)
     print(f"\n{n_total} file(s) checked")
     print(f"{len(fits_failures)} fits.io failure(s)")
     if translator_available:
-        print(f"{len(translator_failures)} metadata_translator failure(s) (all attempts failed)")
+        print(f"{len(translator_failures)} file(s) that RawIngestTask would report as metadata failures")
     else:
-        print("metadata_translator checks skipped (astro_metadata_translator not importable)")
+        print("per-detector translation checks skipped (astro_metadata_translator not importable)")
 
     if fits_failures:
         print("\nFITS access failures (file-access/content problem, not LSST-specific):")
@@ -193,13 +224,9 @@ def main():
             print(f"  {path}: {msg}")
 
     if translator_failures:
-        print(
-            "\nMetadata translation failures (file opens fine, but the translator could "
-            "not understand any header variant tried -- likely wrong translator / "
-            "unexpected keywords):"
-        )
-        for path in translator_failures:
-            print(f"  {path}")
+        print("\nFiles that fail RawIngestTask-style metadata extraction:")
+        for path, msg in translator_failures:
+            print(f"  {path}: {msg}")
 
     if fits_failures or translator_failures:
         sys.exit(1)
