@@ -35,20 +35,26 @@ jobs:
           lfs: false
           ref: main
 
-      - name: Cache LFS for kbmod_imdiff_recipe
-        uses: actions/cache@v4
+      - name: Restore LFS cache for kbmod_imdiff_recipe
+        id: cache-restore-imdiff
+        uses: actions/cache/restore@v4
         with:
           path: kbmod_imdiff_recipe/.git/lfs
-          key: ${{ runner.os }}-lfs-imdiff-${{ hashFiles('kbmod_imdiff_recipe/.gitattributes') }}
+          key: ${{ runner.os }}-lfs-imdiff-v2-${{ hashFiles('kbmod_imdiff_recipe/.gitattributes') }}
           restore-keys: |
-            ${{ runner.os }}-lfs-imdiff-
+            ${{ runner.os }}-lfs-imdiff-v2-
 
-      - name: Pull LFS files
-        run: |
-          cd kbmod_imdiff_recipe
-          git lfs install          
-          git lfs pull
-      
+      - name: Pull and verify LFS files for kbmod_imdiff_recipe
+        run: bash proc_decam/.github/scripts/lfs_pull_verify.sh kbmod_imdiff_recipe
+
+      # Only reached if the previous step succeeded, so a broken/partial
+      # pull can never be cached and poison future runs.
+      - name: Save LFS cache for kbmod_imdiff_recipe
+        uses: actions/cache/save@v4
+        with:
+          path: kbmod_imdiff_recipe/.git/lfs
+          key: ${{ steps.cache-restore-imdiff.outputs.cache-primary-key }}
+
       - name: Checkout kbmod_mastercals_recipe
         uses: actions/checkout@v4
         with:
@@ -56,21 +62,25 @@ jobs:
           path: kbmod_mastercals_recipe
           lfs: false
           ref: main
-          
-      - name: Cache LFS for kbmod_mastercals_recipe
-        uses: actions/cache@v4
+
+      - name: Restore LFS cache for kbmod_mastercals_recipe
+        id: cache-restore-mastercals
+        uses: actions/cache/restore@v4
         with:
           path: kbmod_mastercals_recipe/.git/lfs
-          key: ${{ runner.os }}-lfs-mastercals-${{ hashFiles('kbmod_mastercals_recipe/.gitattributes') }}
+          key: ${{ runner.os }}-lfs-mastercals-v2-${{ hashFiles('kbmod_mastercals_recipe/.gitattributes') }}
           restore-keys: |
-            ${{ runner.os }}-lfs-mastercals-
-      
-      - name: Pull LFS files
-        run: |
-          cd kbmod_mastercals_recipe
-          git lfs install          
-          git lfs pull
-          
+            ${{ runner.os }}-lfs-mastercals-v2-
+
+      - name: Pull and verify LFS files for kbmod_mastercals_recipe
+        run: bash proc_decam/.github/scripts/lfs_pull_verify.sh kbmod_mastercals_recipe
+
+      - name: Save LFS cache for kbmod_mastercals_recipe
+        uses: actions/cache/save@v4
+        with:
+          path: kbmod_mastercals_recipe/.git/lfs
+          key: ${{ steps.cache-restore-mastercals.outputs.cache-primary-key }}
+
       - name: Run pipeline
         shell: bash
         run: |
