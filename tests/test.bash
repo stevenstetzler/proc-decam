@@ -11,6 +11,14 @@ python ${WORK}/proc_decam/tests/make_exposures.py \
 --output ${DATA}/exposures.ecsv \
 --image-dir ${DATA}/images
 
+# Diagnostic layer: confirm the symlinked FITS files both open cleanly
+# (astropy.io.fits) and translate cleanly (astro_metadata_translator, the
+# same machinery the ingest step below uses) before handing them to the
+# pipeline. Isolates a plain file-access problem from something specific
+# to LSST's header translation.
+python ${WORK}/proc_decam/tests/verify_fits_metadata.py \
+${DATA}/downloaded_exposures.ecsv
+
 # start repo
 proc-decam db start ${REPO}
 
