@@ -10,7 +10,14 @@ permissions:
   packages: read
 
 jobs:
+  build-image:
+    permissions:
+      contents: read
+      packages: write
+    uses: ./.github/workflows/build-image.yml
+
   integration-test:
+    needs: build-image
     runs-on: ubuntu-latest
 
     container:
