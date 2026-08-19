@@ -11,14 +11,6 @@ python ${WORK}/proc_decam/tests/make_exposures.py \
 --output ${DATA}/exposures.ecsv \
 --image-dir ${DATA}/images
 
-# Diagnostic layer: confirm the symlinked FITS files both open cleanly
-# (astropy.io.fits) and translate cleanly (astro_metadata_translator, the
-# same machinery the ingest step below uses) before handing them to the
-# pipeline. Isolates a plain file-access problem from something specific
-# to LSST's header translation.
-python ${WORK}/proc_decam/tests/verify_fits_metadata.py \
-${DATA}/downloaded_exposures.ecsv
-
 # start repo
 proc-decam db start ${REPO}
 
@@ -35,9 +27,12 @@ proc-decam fakes ${REPO} \
   --format fits
 
 # process night through calibrated exposures
-# J=1 proc-decam night ${REPO} ${DATA}/exposures.ecsv --nights 20210318 \
-#   --where "instrument='DECam' and detector=35" \
-#   --debug
-proc-decam ingest /home/lsst/data/exposures.ecsv \
-  -b /home/lsst/repo --image-dir ${DATA}/images \
-  --select night=20210318 obs_type='zero'
+# (night's own bias/flat/drp steps ingest raw frames themselves, so no
+# separate `proc-decam ingest` call is needed here -- one would also be
+# harmful: it would populate the DECam/raw/all collection early, and
+# night's per-proc-type ingest calls skip outright once that collection
+# already exists, silently leaving flat/science uningested.)
+J=1 proc-decam night ${REPO} ${DATA}/exposures.ecsv --nights 20210318 \
+  --image-dir ${DATA}/images \
+  --where "instrument='DECam' and detector=35" \
+  --debug

@@ -28,6 +28,7 @@ def main():
     parser.add_argument("exposures")
     parser.add_argument("--nights", default=".*")
     # parser.add_argument("--steps", nargs="+")
+    parser.add_argument("--image-dir", default="./data/images")
     parser.add_argument("--proc-types", nargs="+", default=["bias", "flat", "drp"])
     parser.add_argument("--coadd-subset", default=None)
     parser.add_argument("--template-type", default=None)
@@ -79,7 +80,7 @@ def main():
                     "ingest",
                     args.exposures,
                     "-b", args.repo,
-                    "--image-dir", "./data/images",
+                    "--image-dir", args.image_dir,
                     "--select", f"night={night} obs_type='{proc_to_obs[proc_type]}'",
                 ]
                 cmd = " ".join(map(str, cmd))
