@@ -39,5 +39,5 @@ proc-decam fakes ${REPO} \
 #   --where "instrument='DECam' and detector=35" \
 #   --debug
 proc-decam ingest /home/lsst/data/exposures.ecsv \
-  -b /home/lsst/repo --image-dir ./data/images \
+  -b /home/lsst/repo --image-dir ${DATA}/images \
   --select night=20210318 obs_type='zero'
