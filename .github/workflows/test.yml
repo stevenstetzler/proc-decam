@@ -101,3 +101,34 @@ jobs:
           chown -R lsst:lsst ${WORK}
           # switch to lsst user
           su - lsst -c "WORK='${WORK}' REPO='${REPO}' DATA='${DATA}' bash ${WORK}/proc_decam/tests/test.bash"
+
+      # If the pipeline step above gets SIGKILLed (e.g. an OOM kill of a
+      # parsl worker), nothing inside that process -- including test.bash's
+      # own `|| { find ...; }` handler -- is guaranteed to run, since
+      # SIGKILL can't be caught or handled. This step runs independently,
+      # in a fresh `docker exec` into the same still-alive container, and
+      # just reads whatever manager.log/worker_*.log files parsl left on
+      # disk, so it works even when the failing process never got a chance
+      # to report anything itself.
+      - name: Summarize parsl worker/manager logs on failure
+        if: failure()
+        shell: bash
+        run: |
+          {
+            echo "## Parsl manager/worker logs"
+            echo
+            found=$(find "${GITHUB_WORKSPACE}" \( -name "manager.log" -o -name "worker_*.log" \) -print -quit)
+            if [ -z "$found" ]; then
+              echo "_No manager.log or worker_*.log files found under \`${GITHUB_WORKSPACE}\`._"
+            else
+              find "${GITHUB_WORKSPACE}" \( -name "manager.log" -o -name "worker_*.log" \) -print0 |
+              while IFS= read -r -d '' f; do
+                echo "### \`${f#"${GITHUB_WORKSPACE}"/}\`"
+                echo
+                echo '```'
+                tail -n +1 "$f"
+                echo '```'
+                echo
+              done
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
