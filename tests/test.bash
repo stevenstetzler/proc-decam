@@ -34,4 +34,7 @@ cd ${WORK}/proc_decam
 J=1 proc-decam night ${REPO} ${DATA}/exposures.ecsv --nights 20210318 \
   --image-dir ${DATA}/images \
   --where "instrument='DECam' and detector=35" \
-  --debug
+  --debug || {
+  find . -name "manager.log" -exec tail -n +1 {} +
+  find . -name "worker_*.log" -exec tail -n +1 {} +
+}
