@@ -31,9 +31,10 @@ proc-decam fakes ${REPO} \
 # night's per-proc-type ingest calls skip outright once that collection
 # already exists, silently leaving flat/science uningested.)
 cd ${WORK}/proc_decam
-J=1 proc-decam night ${REPO} ${DATA}/exposures.ecsv --nights 20210318 \
+proc-decam night ${REPO} ${DATA}/exposures.ecsv --nights 20210318 \
   --image-dir ${DATA}/images \
   --where "instrument='DECam' and detector=35" \
+  --workers 1 \
   --debug || {
   find . -name "manager.log" -exec tail -n +1 {} +
   find . -name "worker_*.log" -exec tail -n +1 {} +
