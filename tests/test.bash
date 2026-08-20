@@ -20,10 +20,8 @@ proc-decam refcats ${REPO} ${DATA}/exposures.ecsv
 # ingest fakes
 cd ${WORK}/kbmod_imdiff_recipe/trimmedRawData/fakes
 python create_fakes.py
-cd ${WORK}
-
 proc-decam fakes ${REPO} \
-  ${WORK}/kbmod_imdiff_recipe/trimmedRawData/fakes/fakes_fakeSrcCat.fits \
+  fakes_fakeSrcCat.fits \
   --format fits
 
 # process night through calibrated exposures
@@ -32,6 +30,7 @@ proc-decam fakes ${REPO} \
 # harmful: it would populate the DECam/raw/all collection early, and
 # night's per-proc-type ingest calls skip outright once that collection
 # already exists, silently leaving flat/science uningested.)
+cd ${WORK}/proc_decam
 J=1 proc-decam night ${REPO} ${DATA}/exposures.ecsv --nights 20210318 \
   --image-dir ${DATA}/images \
   --where "instrument='DECam' and detector=35" \
