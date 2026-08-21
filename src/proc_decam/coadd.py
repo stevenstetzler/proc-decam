@@ -156,7 +156,7 @@ def main():
     #     cmd += [f"--where \"{args.where}\""]
     # 
     # coadd pipeline
-    steps = ["step3b", "step3c", "step3d"]
+    steps = ["step3b", "step3c", "step3d"]#, "step3e", "step3f", "step3g", "step3h"]
     cmd = [
         "proc-decam",
         "pipeline",

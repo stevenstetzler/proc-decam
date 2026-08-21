@@ -246,7 +246,7 @@ def main():
                 elif proc_type == "drp":
                     steps = ["step0", "step1", "step2a", "step2b", "step2c", "step2d", "step2e", "step2f", "step3a"]
                 elif proc_type == "diff_drp":
-                    steps = ["step4a", "step4b", "step4c", "step4d", "step4e"]
+                    steps = ["step4a", "step4b", "step4d", "step4e", "step4f"] # "step4c", 
                 else:
                     raise Exception(f"unsupported proc type {proc_type}")
                 

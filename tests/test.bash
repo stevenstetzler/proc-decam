@@ -31,7 +31,8 @@ proc-decam fakes ${REPO} \
 # night's per-proc-type ingest calls skip outright once that collection
 # already exists, silently leaving flat/science uningested.)
 cd ${WORK}/proc_decam
-proc-decam night ${REPO} ${DATA}/exposures.ecsv --nights 20210318 \
+export PROC_DECAM_DIR=$PWD
+J=1 proc-decam night ${REPO} ${DATA}/exposures.ecsv --nights 20210318 \
   --image-dir ${DATA}/images \
   --where "instrument='DECam' and detector=35" \
   --workers 1 \
@@ -39,3 +40,14 @@ proc-decam night ${REPO} ${DATA}/exposures.ecsv --nights 20210318 \
   find . -name "manager.log" -exec tail -n +1 {} +
   find . -name "worker_*.log" -exec tail -n +1 {} +
 }
+
+J=1 proc-decam coadd ${REPO} "20210318" --coadd-subset 20210318 \
+  --template-type meanclip \
+  --warp-coadd-name deep
+
+J=1 proc-decam night ${REPO} ${DATA}/exposures.ecsv --nights 20210318 \
+   --proc-type diff_drp \
+   --coadd-subset 20210318 \
+   --where "instrument='DECam' and detector=35" \
+   --workers 1 \
+   --template-type meanclip 
