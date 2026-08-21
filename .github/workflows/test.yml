@@ -20,12 +20,12 @@ jobs:
     needs: build-image
     runs-on: [self-hosted, linux, arm64]
 
-    container:
-      image: ghcr.io/${{ github.repository }}:lsst-w_2024_34
-      credentials:
-        username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
-      options: --user root --platform=linux/amd64
+    # container:
+    #   image: ghcr.io/${{ github.repository }}:lsst-w_2024_34
+    #   credentials:
+    #     username: ${{ github.actor }}
+    #     password: ${{ secrets.GITHUB_TOKEN }}
+    #   options: --user root --platform=linux/amd64
 
     steps:
       - name: Checkout proc-decam (with LFS)
@@ -88,47 +88,33 @@ jobs:
           path: kbmod_mastercals_recipe/.git/lfs
           key: ${{ steps.cache-restore-mastercals.outputs.cache-primary-key }}
 
-      - name: Run pipeline
-        shell: bash
+      - name: Write pipeline runner script
+        # Written to a file rather than inlined into `docker run ... bash -c
+        # "..."` -- avoids several layers of nested quoting (docker run ->
+        # bash -c -> su -c) that would otherwise make this unreadable and
+        # easy to get subtly wrong.
         run: |
+          cat > "${PWD}/run_pipeline.sh" <<'SCRIPT'
           source /opt/lsst/software/stack/loadLSST.bash
           setup lsst_distrib
           set -xeuo pipefail
-          export WORK=$(pwd)
-          # install checked out software
-          python -m pip install ${WORK}/proc_decam
-          # change ownership of work directory
-          chown -R lsst:lsst ${WORK}
-          # switch to lsst user
+          export WORK="$(pwd)"
+          python -m pip install "${WORK}/proc_decam"
+          chown -R lsst:lsst "${WORK}"
           su - lsst -c "WORK='${WORK}' REPO='${REPO}' DATA='${DATA}' bash ${WORK}/proc_decam/tests/test.bash"
+          SCRIPT
+          chmod +x "${PWD}/run_pipeline.sh"
 
-      # # If the pipeline step above gets SIGKILLed (e.g. an OOM kill of a
-      # # parsl worker), nothing inside that process -- including test.bash's
-      # # own `|| { find ...; }` handler -- is guaranteed to run, since
-      # # SIGKILL can't be caught or handled. This step runs independently,
-      # # in a fresh `docker exec` into the same still-alive container, and
-      # # just reads whatever manager.log/worker_*.log files parsl left on
-      # # disk, so it works even when the failing process never got a chance
-      # # to report anything itself.
-      # - name: Summarize parsl worker/manager logs on failure
-      #   if: failure()
-      #   shell: bash
-      #   run: |
-      #     {
-      #       echo "## Parsl manager/worker logs"
-      #       echo
-      #       found=$(find "${GITHUB_WORKSPACE}" \( -name "manager.log" -o -name "worker_*.log" \) -print -quit)
-      #       if [ -z "$found" ]; then
-      #         echo "_No manager.log or worker_*.log files found under \`${GITHUB_WORKSPACE}\`._"
-      #       else
-      #         find "${GITHUB_WORKSPACE}" \( -name "manager.log" -o -name "worker_*.log" \) -print0 |
-      #         while IFS= read -r -d '' f; do
-      #           echo "### \`${f#"${GITHUB_WORKSPACE}"/}\`"
-      #           echo
-      #           echo '```'
-      #           tail -n +1 "$f"
-      #           echo '```'
-      #           echo
-      #         done
-      #       fi
-      #     } >> "$GITHUB_STEP_SUMMARY"
+      - name: Log in to ghcr.io
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+
+      - name: Run pipeline (inside the amd64 LSST image, via emulation)
+        run: |
+          docker run --rm \
+            --pull=always \
+            --platform=linux/amd64 \
+            --user root \
+            -v "${PWD}:${PWD}" \
+            -w "${PWD}" \
+            "ghcr.io/${{ github.repository }}:lsst-w_2024_34" \
+            bash "${PWD}/run_pipeline.sh"
