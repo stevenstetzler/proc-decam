@@ -1,48 +1,48 @@
 # name: Build and Push Docker Image
 
-# on:
-#   workflow_dispatch:
-#   workflow_call:
-#   push:
-#     branches:
-#       - main
-#     paths:
-#       - Dockerfile
+on:
+  workflow_dispatch:
+  workflow_call:
+  push:
+    branches:
+      - main
+    paths:
+      - Dockerfile
 
-# jobs:
-#   build-and-push:
-#     runs-on: ubuntu-latest
-#     permissions:
-#       contents: read
-#       packages: write
-#     steps:
-#       - uses: actions/checkout@v4
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
 
-#       - name: Log in to GitHub Container Registry
-#         uses: docker/login-action@v3
-#         with:
-#           registry: ghcr.io
-#           username: ${{ github.actor }}
-#           password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-#       # When called as a prerequisite (workflow_call, e.g. from test.yml) we
-#       # only need *an* image to exist - skip rebuilding an unchanged image on
-#       # every PR. A direct push to main touching the Dockerfile, or a manual
-#       # dispatch, always rebuilds so intentional changes are never skipped.
-#       - name: Check if image already exists
-#         id: check
-#         if: github.event_name == 'workflow_call'
-#         run: |
-#           if docker manifest inspect ghcr.io/${{ github.repository }}:lsst-w_2024_34 > /dev/null 2>&1; then
-#             echo "exists=true" >> "$GITHUB_OUTPUT"
-#           else
-#             echo "exists=false" >> "$GITHUB_OUTPUT"
-#           fi
+      # When called as a prerequisite (workflow_call, e.g. from test.yml) we
+      # only need *an* image to exist - skip rebuilding an unchanged image on
+      # every PR. A direct push to main touching the Dockerfile, or a manual
+      # dispatch, always rebuilds so intentional changes are never skipped.
+      - name: Check if image already exists
+        id: check
+        if: github.event_name == 'workflow_call'
+        run: |
+          if docker manifest inspect ghcr.io/${{ github.repository }}:lsst-w_2024_34 > /dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
 
-#       - name: Build and push image
-#         if: steps.check.outputs.exists != 'true'
-#         uses: docker/build-push-action@v6
-#         with:
-#           context: .
-#           push: true
-#           tags: ghcr.io/${{ github.repository }}:lsst-w_2024_34
+      - name: Build and push image
+        if: steps.check.outputs.exists != 'true'
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ghcr.io/${{ github.repository }}:lsst-w_2024_34

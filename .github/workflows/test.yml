@@ -1,134 +1,134 @@
-# name: Tests
+name: Tests
 
-# on:
-#   pull_request:
-#     branches:
-#       - main
+on:
+  pull_request:
+    branches:
+      - main
 
-# permissions:
-#   contents: read
-#   packages: read
+permissions:
+  contents: read
+  packages: read
 
-# jobs:
-#   build-image:
-#     permissions:
-#       contents: read
-#       packages: write
-#     uses: ./.github/workflows/build-image.yml
+jobs:
+  build-image:
+    permissions:
+      contents: read
+      packages: write
+    uses: ./.github/workflows/build-image.yml
 
-#   integration-test:
-#     needs: build-image
-#     runs-on: ubuntu-latest
+  integration-test:
+    needs: build-image
+    runs-on: [self-hosted, linux, arm64]
 
-#     container:
-#       image: ghcr.io/${{ github.repository }}:lsst-w_2024_34
-#       credentials:
-#         username: ${{ github.actor }}
-#         password: ${{ secrets.GITHUB_TOKEN }}
-#       options: --user root
+    container:
+      image: ghcr.io/${{ github.repository }}:lsst-w_2024_34
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+      options: --user root --platform=linux/amd64
 
-#     steps:
-#       - name: Checkout proc-decam (with LFS)
-#         uses: actions/checkout@v4
-#         with:
-#           path: proc_decam
-#           lfs: true
+    steps:
+      - name: Checkout proc-decam (with LFS)
+        uses: actions/checkout@v4
+        with:
+          path: proc_decam
+          lfs: true
 
-#       - name: Checkout kbmod_imdiff_recipe
-#         uses: actions/checkout@v4
-#         with:
-#           repository: dirac-institute/kbmod_imdiff_recipe
-#           path: kbmod_imdiff_recipe
-#           lfs: false
-#           ref: main
+      - name: Checkout kbmod_imdiff_recipe
+        uses: actions/checkout@v4
+        with:
+          repository: dirac-institute/kbmod_imdiff_recipe
+          path: kbmod_imdiff_recipe
+          lfs: false
+          ref: main
 
-#       - name: Restore LFS cache for kbmod_imdiff_recipe
-#         id: cache-restore-imdiff
-#         uses: actions/cache/restore@v4
-#         with:
-#           path: kbmod_imdiff_recipe/.git/lfs
-#           key: ${{ runner.os }}-lfs-imdiff-v2-${{ hashFiles('kbmod_imdiff_recipe/.gitattributes') }}
-#           restore-keys: |
-#             ${{ runner.os }}-lfs-imdiff-v2-
+      - name: Restore LFS cache for kbmod_imdiff_recipe
+        id: cache-restore-imdiff
+        uses: actions/cache/restore@v4
+        with:
+          path: kbmod_imdiff_recipe/.git/lfs
+          key: ${{ runner.os }}-lfs-imdiff-v2-${{ hashFiles('kbmod_imdiff_recipe/.gitattributes') }}
+          restore-keys: |
+            ${{ runner.os }}-lfs-imdiff-v2-
 
-#       - name: Pull and verify LFS files for kbmod_imdiff_recipe
-#         run: bash proc_decam/.github/scripts/lfs_pull_verify.sh kbmod_imdiff_recipe
+      - name: Pull and verify LFS files for kbmod_imdiff_recipe
+        run: bash proc_decam/.github/scripts/lfs_pull_verify.sh kbmod_imdiff_recipe
 
-#       # Only reached if the previous step succeeded, so a broken/partial
-#       # pull can never be cached and poison future runs.
-#       - name: Save LFS cache for kbmod_imdiff_recipe
-#         uses: actions/cache/save@v4
-#         with:
-#           path: kbmod_imdiff_recipe/.git/lfs
-#           key: ${{ steps.cache-restore-imdiff.outputs.cache-primary-key }}
+      # Only reached if the previous step succeeded, so a broken/partial
+      # pull can never be cached and poison future runs.
+      - name: Save LFS cache for kbmod_imdiff_recipe
+        uses: actions/cache/save@v4
+        with:
+          path: kbmod_imdiff_recipe/.git/lfs
+          key: ${{ steps.cache-restore-imdiff.outputs.cache-primary-key }}
 
-#       - name: Checkout kbmod_mastercals_recipe
-#         uses: actions/checkout@v4
-#         with:
-#           repository: dirac-institute/kbmod_mastercals_recipe
-#           path: kbmod_mastercals_recipe
-#           lfs: false
-#           ref: main
+      - name: Checkout kbmod_mastercals_recipe
+        uses: actions/checkout@v4
+        with:
+          repository: dirac-institute/kbmod_mastercals_recipe
+          path: kbmod_mastercals_recipe
+          lfs: false
+          ref: main
 
-#       - name: Restore LFS cache for kbmod_mastercals_recipe
-#         id: cache-restore-mastercals
-#         uses: actions/cache/restore@v4
-#         with:
-#           path: kbmod_mastercals_recipe/.git/lfs
-#           key: ${{ runner.os }}-lfs-mastercals-v2-${{ hashFiles('kbmod_mastercals_recipe/.gitattributes') }}
-#           restore-keys: |
-#             ${{ runner.os }}-lfs-mastercals-v2-
+      - name: Restore LFS cache for kbmod_mastercals_recipe
+        id: cache-restore-mastercals
+        uses: actions/cache/restore@v4
+        with:
+          path: kbmod_mastercals_recipe/.git/lfs
+          key: ${{ runner.os }}-lfs-mastercals-v2-${{ hashFiles('kbmod_mastercals_recipe/.gitattributes') }}
+          restore-keys: |
+            ${{ runner.os }}-lfs-mastercals-v2-
 
-#       - name: Pull and verify LFS files for kbmod_mastercals_recipe
-#         run: bash proc_decam/.github/scripts/lfs_pull_verify.sh kbmod_mastercals_recipe
+      - name: Pull and verify LFS files for kbmod_mastercals_recipe
+        run: bash proc_decam/.github/scripts/lfs_pull_verify.sh kbmod_mastercals_recipe
 
-#       - name: Save LFS cache for kbmod_mastercals_recipe
-#         uses: actions/cache/save@v4
-#         with:
-#           path: kbmod_mastercals_recipe/.git/lfs
-#           key: ${{ steps.cache-restore-mastercals.outputs.cache-primary-key }}
+      - name: Save LFS cache for kbmod_mastercals_recipe
+        uses: actions/cache/save@v4
+        with:
+          path: kbmod_mastercals_recipe/.git/lfs
+          key: ${{ steps.cache-restore-mastercals.outputs.cache-primary-key }}
 
-#       - name: Run pipeline
-#         shell: bash
-#         run: |
-#           source /opt/lsst/software/stack/loadLSST.bash
-#           setup lsst_distrib
-#           set -xeuo pipefail
-#           export WORK=$(pwd)
-#           # install checked out software
-#           python -m pip install ${WORK}/proc_decam
-#           # change ownership of work directory
-#           chown -R lsst:lsst ${WORK}
-#           # switch to lsst user
-#           su - lsst -c "WORK='${WORK}' REPO='${REPO}' DATA='${DATA}' bash ${WORK}/proc_decam/tests/test.bash"
+      - name: Run pipeline
+        shell: bash
+        run: |
+          source /opt/lsst/software/stack/loadLSST.bash
+          setup lsst_distrib
+          set -xeuo pipefail
+          export WORK=$(pwd)
+          # install checked out software
+          python -m pip install ${WORK}/proc_decam
+          # change ownership of work directory
+          chown -R lsst:lsst ${WORK}
+          # switch to lsst user
+          su - lsst -c "WORK='${WORK}' REPO='${REPO}' DATA='${DATA}' bash ${WORK}/proc_decam/tests/test.bash"
 
-#       # If the pipeline step above gets SIGKILLed (e.g. an OOM kill of a
-#       # parsl worker), nothing inside that process -- including test.bash's
-#       # own `|| { find ...; }` handler -- is guaranteed to run, since
-#       # SIGKILL can't be caught or handled. This step runs independently,
-#       # in a fresh `docker exec` into the same still-alive container, and
-#       # just reads whatever manager.log/worker_*.log files parsl left on
-#       # disk, so it works even when the failing process never got a chance
-#       # to report anything itself.
-#       - name: Summarize parsl worker/manager logs on failure
-#         if: failure()
-#         shell: bash
-#         run: |
-#           {
-#             echo "## Parsl manager/worker logs"
-#             echo
-#             found=$(find "${GITHUB_WORKSPACE}" \( -name "manager.log" -o -name "worker_*.log" \) -print -quit)
-#             if [ -z "$found" ]; then
-#               echo "_No manager.log or worker_*.log files found under \`${GITHUB_WORKSPACE}\`._"
-#             else
-#               find "${GITHUB_WORKSPACE}" \( -name "manager.log" -o -name "worker_*.log" \) -print0 |
-#               while IFS= read -r -d '' f; do
-#                 echo "### \`${f#"${GITHUB_WORKSPACE}"/}\`"
-#                 echo
-#                 echo '```'
-#                 tail -n +1 "$f"
-#                 echo '```'
-#                 echo
-#               done
-#             fi
-#           } >> "$GITHUB_STEP_SUMMARY"
+      # # If the pipeline step above gets SIGKILLed (e.g. an OOM kill of a
+      # # parsl worker), nothing inside that process -- including test.bash's
+      # # own `|| { find ...; }` handler -- is guaranteed to run, since
+      # # SIGKILL can't be caught or handled. This step runs independently,
+      # # in a fresh `docker exec` into the same still-alive container, and
+      # # just reads whatever manager.log/worker_*.log files parsl left on
+      # # disk, so it works even when the failing process never got a chance
+      # # to report anything itself.
+      # - name: Summarize parsl worker/manager logs on failure
+      #   if: failure()
+      #   shell: bash
+      #   run: |
+      #     {
+      #       echo "## Parsl manager/worker logs"
+      #       echo
+      #       found=$(find "${GITHUB_WORKSPACE}" \( -name "manager.log" -o -name "worker_*.log" \) -print -quit)
+      #       if [ -z "$found" ]; then
+      #         echo "_No manager.log or worker_*.log files found under \`${GITHUB_WORKSPACE}\`._"
+      #       else
+      #         find "${GITHUB_WORKSPACE}" \( -name "manager.log" -o -name "worker_*.log" \) -print0 |
+      #         while IFS= read -r -d '' f; do
+      #           echo "### \`${f#"${GITHUB_WORKSPACE}"/}\`"
+      #           echo
+      #           echo '```'
+      #           tail -n +1 "$f"
+      #           echo '```'
+      #           echo
+      #         done
+      #       fi
+      #     } >> "$GITHUB_STEP_SUMMARY"
