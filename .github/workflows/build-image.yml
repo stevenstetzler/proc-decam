@@ -31,7 +31,7 @@ jobs:
       # dispatch, always rebuilds so intentional changes are never skipped.
       - name: Check if image already exists
         id: check
-        if: github.event_name == 'workflow_call'
+        # if: github.event_name == 'workflow_call'
         run: |
           if docker manifest inspect ghcr.io/${{ github.repository }}:lsst-w_2024_34 > /dev/null 2>&1; then
             echo "exists=true" >> "$GITHUB_OUTPUT"
