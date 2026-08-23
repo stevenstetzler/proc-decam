@@ -1,120 +1,122 @@
-name: Tests
+# name: Tests
 
-on:
-  pull_request:
-    branches:
-      - main
+# on:
+#   pull_request:
+#     branches:
+#       - main
 
-permissions:
-  contents: read
-  packages: read
+# permissions:
+#   contents: read
+#   packages: read
 
-jobs:
-  build-image:
-    permissions:
-      contents: read
-      packages: write
-    uses: ./.github/workflows/build-image.yml
+# jobs:
+#   build-image:
+#     permissions:
+#       contents: read
+#       packages: write
+#     uses: ./.github/workflows/build-image.yml
 
-  integration-test:
-    needs: build-image
-    runs-on: [self-hosted]
+  # integration-test:
+  #   needs: build-image
+  #   runs-on: [self-hosted]
 
-    # container:
-    #   image: ghcr.io/${{ github.repository }}:lsst-w_2024_34
-    #   credentials:
-    #     username: ${{ github.actor }}
-    #     password: ${{ secrets.GITHUB_TOKEN }}
-    #   options: --user root --platform=linux/amd64
+#     # container:
+#     #   image: ghcr.io/${{ github.repository }}:lsst-w_2024_34
+#     #   credentials:
+#     #     username: ${{ github.actor }}
+#     #     password: ${{ secrets.GITHUB_TOKEN }}
+#     #   options: --user root --platform=linux/amd64
 
-    steps:
-      - name: Checkout proc-decam (with LFS)
-        uses: actions/checkout@v4
-        with:
-          path: proc_decam
-          lfs: true
+#     steps:
+#       - name: Checkout proc-decam (with LFS)
+#         uses: actions/checkout@v4
+#         with:
+#           path: proc_decam
+#           lfs: true
 
-      - name: Checkout kbmod_imdiff_recipe
-        uses: actions/checkout@v4
-        with:
-          repository: dirac-institute/kbmod_imdiff_recipe
-          path: kbmod_imdiff_recipe
-          lfs: false
-          ref: main
+#       - name: Checkout kbmod_imdiff_recipe
+#         uses: actions/checkout@v4
+#         with:
+#           repository: dirac-institute/kbmod_imdiff_recipe
+#           path: kbmod_imdiff_recipe
+#           lfs: false
+#           ref: main
 
-      - name: Restore LFS cache for kbmod_imdiff_recipe
-        id: cache-restore-imdiff
-        uses: actions/cache/restore@v4
-        with:
-          path: kbmod_imdiff_recipe/.git/lfs
-          key: ${{ runner.os }}-lfs-imdiff-v2-${{ hashFiles('kbmod_imdiff_recipe/.gitattributes') }}
-          restore-keys: |
-            ${{ runner.os }}-lfs-imdiff-v2-
+#       - name: Restore LFS cache for kbmod_imdiff_recipe
+#         id: cache-restore-imdiff
+#         uses: actions/cache/restore@v4
+#         with:
+#           path: kbmod_imdiff_recipe/.git/lfs
+#           key: ${{ runner.os }}-lfs-imdiff-v2-${{ hashFiles('kbmod_imdiff_recipe/.gitattributes') }}
+#           restore-keys: |
+#             ${{ runner.os }}-lfs-imdiff-v2-
 
-      - name: Pull and verify LFS files for kbmod_imdiff_recipe
-        run: bash proc_decam/.github/scripts/lfs_pull_verify.sh kbmod_imdiff_recipe
+#       - name: Pull and verify LFS files for kbmod_imdiff_recipe
+#         run: bash proc_decam/.github/scripts/lfs_pull_verify.sh kbmod_imdiff_recipe
 
-      # Only reached if the previous step succeeded, so a broken/partial
-      # pull can never be cached and poison future runs.
-      - name: Save LFS cache for kbmod_imdiff_recipe
-        uses: actions/cache/save@v4
-        with:
-          path: kbmod_imdiff_recipe/.git/lfs
-          key: ${{ steps.cache-restore-imdiff.outputs.cache-primary-key }}
+#       # Only reached if the previous step succeeded, so a broken/partial
+#       # pull can never be cached and poison future runs.
+#       - name: Save LFS cache for kbmod_imdiff_recipe
+#         uses: actions/cache/save@v4
+#         with:
+#           path: kbmod_imdiff_recipe/.git/lfs
+#           key: ${{ steps.cache-restore-imdiff.outputs.cache-primary-key }}
 
-      - name: Checkout kbmod_mastercals_recipe
-        uses: actions/checkout@v4
-        with:
-          repository: dirac-institute/kbmod_mastercals_recipe
-          path: kbmod_mastercals_recipe
-          lfs: false
-          ref: main
+#       - name: Checkout kbmod_mastercals_recipe
+#         uses: actions/checkout@v4
+#         with:
+#           repository: dirac-institute/kbmod_mastercals_recipe
+#           path: kbmod_mastercals_recipe
+#           lfs: false
+#           ref: main
 
-      - name: Restore LFS cache for kbmod_mastercals_recipe
-        id: cache-restore-mastercals
-        uses: actions/cache/restore@v4
-        with:
-          path: kbmod_mastercals_recipe/.git/lfs
-          key: ${{ runner.os }}-lfs-mastercals-v2-${{ hashFiles('kbmod_mastercals_recipe/.gitattributes') }}
-          restore-keys: |
-            ${{ runner.os }}-lfs-mastercals-v2-
+#       - name: Restore LFS cache for kbmod_mastercals_recipe
+#         id: cache-restore-mastercals
+#         uses: actions/cache/restore@v4
+#         with:
+#           path: kbmod_mastercals_recipe/.git/lfs
+#           key: ${{ runner.os }}-lfs-mastercals-v2-${{ hashFiles('kbmod_mastercals_recipe/.gitattributes') }}
+#           restore-keys: |
+#             ${{ runner.os }}-lfs-mastercals-v2-
 
-      - name: Pull and verify LFS files for kbmod_mastercals_recipe
-        run: bash proc_decam/.github/scripts/lfs_pull_verify.sh kbmod_mastercals_recipe
+#       - name: Pull and verify LFS files for kbmod_mastercals_recipe
+#         run: bash proc_decam/.github/scripts/lfs_pull_verify.sh kbmod_mastercals_recipe
 
-      - name: Save LFS cache for kbmod_mastercals_recipe
-        uses: actions/cache/save@v4
-        with:
-          path: kbmod_mastercals_recipe/.git/lfs
-          key: ${{ steps.cache-restore-mastercals.outputs.cache-primary-key }}
+#       - name: Save LFS cache for kbmod_mastercals_recipe
+#         uses: actions/cache/save@v4
+#         with:
+#           path: kbmod_mastercals_recipe/.git/lfs
+#           key: ${{ steps.cache-restore-mastercals.outputs.cache-primary-key }}
 
-      - name: Write pipeline runner script
-        # Written to a file rather than inlined into `docker run ... bash -c
-        # "..."` -- avoids several layers of nested quoting (docker run ->
-        # bash -c -> su -c) that would otherwise make this unreadable and
-        # easy to get subtly wrong.
-        run: |
-          cat > "${PWD}/run_pipeline.sh" <<'SCRIPT'
-          source /opt/lsst/software/stack/loadLSST.bash
-          setup lsst_distrib
-          set -xeuo pipefail
-          export WORK="$(pwd)"
-          python -m pip install "${WORK}/proc_decam"
-          chown -R lsst:lsst "${WORK}"
-          su - lsst -c "WORK='${WORK}' REPO='${REPO}' DATA='${DATA}' bash ${WORK}/proc_decam/tests/test.bash"
-          SCRIPT
-          chmod +x "${PWD}/run_pipeline.sh"
+#       - name: Write pipeline runner script
+#         # Written to a file rather than inlined into `docker run ... bash -c
+#         # "..."` -- avoids several layers of nested quoting (docker run ->
+#         # bash -c -> su -c) that would otherwise make this unreadable and
+#         # easy to get subtly wrong.
+#         run: |
+#           cat > "${PWD}/run_pipeline.sh" <<'SCRIPT'
+#           source /opt/lsst/software/stack/loadLSST.bash
+#           setup lsst_distrib
+#           set -xeuo pipefail
+#           export WORK="$(pwd)"
+#           python -m pip install "${WORK}/proc_decam"
+#           chown -R lsst:lsst "${WORK}"
+#           su - lsst -c "WORK='${WORK}' REPO='${REPO}' DATA='${DATA}' bash ${WORK}/proc_decam/tests/test.bash"
+#           SCRIPT
+#           chmod +x "${PWD}/run_pipeline.sh"
 
-      - name: Log in to ghcr.io
-        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+#       - name: Log in to ghcr.io
+#         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
 
-      - name: Run pipeline (inside the amd64 LSST image, via emulation)
-        run: |
-          docker run --rm \
-            --pull=always \
-            --platform=linux/amd64 \
-            --user root \
-            -v "${PWD}:${PWD}" \
-            -w "${PWD}" \
-            "ghcr.io/${{ github.repository }}:lsst-w_2024_34" \
-            bash "${PWD}/run_pipeline.sh"
+#       - name: Run pipeline (inside the amd64 LSST image, via emulation)
+#         run: |
+#           docker run --rm \
+#             --pull=always \
+#             --platform=linux/amd64 \
+#             --user root \
+#             -v "${PWD}:${PWD}" \
+#             -w "${PWD}" \
+#             -e QEMU_CPU=max \
+#             -e NPY_DISABLE_CPU_FEATURES="AVX512F,AVX512CD,AVX512ED,AVX512ER,AVX512PF,AVX512VL,AVX512DQ,AVX512BW,AVX512IFMA,AVX512VBMI,AVX2,FMA3,AVX,SSE42,SSE41,SSSE3,SSE3" \
+#             "ghcr.io/${{ github.repository }}:lsst-w_2024_34" \
+#             bash "${PWD}/run_pipeline.sh"

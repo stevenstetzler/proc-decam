@@ -25,29 +25,28 @@ proc-decam fakes ${REPO} \
   --format fits
 
 # process night through calibrated exposures
-# (night's own bias/flat/drp steps ingest raw frames themselves, so no
-# separate `proc-decam ingest` call is needed here -- one would also be
-# harmful: it would populate the DECam/raw/all collection early, and
-# night's per-proc-type ingest calls skip outright once that collection
-# already exists, silently leaving flat/science uningested.)
 cd ${WORK}/proc_decam
 export PROC_DECAM_DIR=$PWD
 J=1 proc-decam night ${REPO} ${DATA}/exposures.ecsv --nights 20210318 \
   --image-dir ${DATA}/images \
   --where "instrument='DECam' and detector=35" \
   --workers 1 \
-  --debug || {
-  find . -name "manager.log" -exec tail -n +1 {} +
-  find . -name "worker_*.log" -exec tail -n +1 {} +
-}
+  --debug
 
-J=1 proc-decam coadd ${REPO} "20210318" --coadd-subset 20210318 \
+# coadd calibrated exposures into a template
+J=1 proc-decam coadd ${REPO} 20210318 --coadd-subset 20210318 \
   --template-type meanclip \
-  --warp-coadd-name deep
+  --warp-coadd-name deep \
+  --debug
 
+# produce difference images
 J=1 proc-decam night ${REPO} ${DATA}/exposures.ecsv --nights 20210318 \
    --proc-type diff_drp \
    --coadd-subset 20210318 \
    --where "instrument='DECam' and detector=35" \
    --workers 1 \
-   --template-type meanclip 
+   --template-type meanclip  \
+  --debug
+
+proc-decam visualize ${REPO} drp calexp
+proc-decam visualize ${REPO} diff_drp deepDiff_differenceExp
