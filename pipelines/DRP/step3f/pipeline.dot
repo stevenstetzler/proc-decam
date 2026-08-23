@@ -1,0 +1,18 @@
+digraph Pipeline {
+graph [splines="ortho", nodesep="0.5", ranksep="0.75"];
+node [shape="box", fontname="Monospace", fontsize="14", margin="0.2,0.1", penwidth="3"];
+edge [color="black", arrowsize="1.5", penwidth="1.5", pad="10mm"];
+"forcedPhotCoadd:2" [style="filled", color="black", fillcolor="#B1F2EF", label=<<TABLE BORDER="0" CELLPADDING="5"><TR><TD ALIGN="LEFT"><B><FONT POINT-SIZE="18">forcedPhotCoadd</FONT></B></TD></TR><TR><TD ALIGN="LEFT">lsst.drp.tasks.forcedPhotCoadd.ForcedPhotCoaddTask</TD></TR><TR><TD ALIGN="LEFT"><I>dimensions:</I>&nbsp;{band, patch}</TD></TR></TABLE>>];
+"deepCoadd_calexp:0" [style="rounded,filled,bold", color="#00BABC", fillcolor="#F5F5F5", label=<<TABLE BORDER="0" CELLPADDING="5"><TR><TD ALIGN="LEFT"><B><FONT POINT-SIZE="18">deepCoadd_calexp</FONT></B></TD></TR><TR><TD ALIGN="LEFT"><I>dimensions:</I>&nbsp;{band, patch}</TD></TR><TR><TD ALIGN="LEFT"><I>storage class:</I>&nbsp;ExposureF</TD></TR></TABLE>>];
+"deepCoadd_ref:0" [style="rounded,filled,bold", color="#00BABC", fillcolor="#F5F5F5", label=<<TABLE BORDER="0" CELLPADDING="5"><TR><TD ALIGN="LEFT"><B><FONT POINT-SIZE="18">deepCoadd_ref</FONT></B></TD></TR><TR><TD ALIGN="LEFT"><I>dimensions:</I>&nbsp;{patch}</TD></TR><TR><TD ALIGN="LEFT"><I>storage class:</I>&nbsp;SourceCatalog</TD></TR></TABLE>>];
+"deepCoadd:0" [style="rounded,filled,bold", color="#00BABC", fillcolor="#F5F5F5", label=<<TABLE BORDER="0" CELLPADDING="5"><TR><TD ALIGN="LEFT"><B><FONT POINT-SIZE="18">deepCoadd</FONT></B></TD></TR><TR><TD ALIGN="LEFT"><I>dimensions:</I>&nbsp;{band, patch}</TD></TR><TR><TD ALIGN="LEFT"><I>storage class:</I>&nbsp;&lt;UNKNOWN&gt;</TD></TR></TABLE>>];
+"deepCoadd_scarletModelData:0" [style="rounded,filled,bold", color="#00BABC", fillcolor="#F5F5F5", label=<<TABLE BORDER="0" CELLPADDING="5"><TR><TD ALIGN="LEFT"><B><FONT POINT-SIZE="18">deepCoadd_scarletModelData</FONT></B></TD></TR><TR><TD ALIGN="LEFT"><I>dimensions:</I>&nbsp;{patch}</TD></TR><TR><TD ALIGN="LEFT"><I>storage class:</I>&nbsp;ScarletModelData</TD></TR></TABLE>>];
+"deepCoadd_meas:0" [style="rounded,filled,bold", color="#00BABC", fillcolor="#F5F5F5", label=<<TABLE BORDER="0" CELLPADDING="5"><TR><TD ALIGN="LEFT"><B><FONT POINT-SIZE="18">deepCoadd_meas</FONT></B></TD></TR><TR><TD ALIGN="LEFT"><I>dimensions:</I>&nbsp;{band, patch}</TD></TR><TR><TD ALIGN="LEFT"><I>storage class:</I>&nbsp;SourceCatalog</TD></TR></TABLE>>];
+"deepCoadd_forced_src:0" [style="rounded,filled,bold", color="#00BABC", fillcolor="#F5F5F5", label=<<TABLE BORDER="0" CELLPADDING="5"><TR><TD ALIGN="LEFT"><B><FONT POINT-SIZE="18">deepCoadd_forced_src</FONT></B></TD></TR><TR><TD ALIGN="LEFT"><I>dimensions:</I>&nbsp;{band, patch}</TD></TR><TR><TD ALIGN="LEFT"><I>storage class:</I>&nbsp;SourceCatalog</TD></TR></TABLE>>];
+"forcedPhotCoadd:2" -> "deepCoadd_forced_src:0";
+"deepCoadd_calexp:0" -> "forcedPhotCoadd:2";
+"deepCoadd_ref:0" -> "forcedPhotCoadd:2";
+"deepCoadd:0" -> "forcedPhotCoadd:2";
+"deepCoadd_scarletModelData:0" -> "forcedPhotCoadd:2";
+"deepCoadd_meas:0" -> "forcedPhotCoadd:2";
+}

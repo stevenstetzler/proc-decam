@@ -1,4 +1,5 @@
 import logging
+import sys
 
 logging.basicConfig()
 logger = logging.getLogger(__name__)
@@ -27,6 +28,7 @@ def main():
     parser.add_argument("exposures")
     parser.add_argument("--nights", default=".*")
     # parser.add_argument("--steps", nargs="+")
+    parser.add_argument("--image-dir", default="./data/images")
     parser.add_argument("--proc-types", nargs="+", default=["bias", "flat", "drp"])
     parser.add_argument("--coadd-subset", default=None)
     parser.add_argument("--template-type", default=None)
@@ -36,6 +38,7 @@ def main():
     parser.add_argument("--pipeline-slurm", action="store_true")
     parser.add_argument("--provider", default="EpycProvider")
     parser.add_argument("--workers", "-J", type=int, default=4)
+    parser.add_argument("--debug", action="store_true")
 
     args = parser.parse_args()
     
@@ -77,7 +80,7 @@ def main():
                     "ingest",
                     args.exposures,
                     "-b", args.repo,
-                    "--image-dir", "./data/images",
+                    "--image-dir", args.image_dir,
                     "--select", f"night={night} obs_type='{proc_to_obs[proc_type]}'",
                 ]
                 cmd = " ".join(map(str, cmd))
@@ -243,7 +246,7 @@ def main():
                 elif proc_type == "drp":
                     steps = ["step0", "step1", "step2a", "step2b", "step2c", "step2d", "step2e", "step2f", "step3a"]
                 elif proc_type == "diff_drp":
-                    steps = ["step4a", "step4b", "step4c", "step4d", "step4e"]
+                    steps = ["step4a", "step4b", "step4d", "step4e", "step4f"] # "step4c", 
                 else:
                     raise Exception(f"unsupported proc type {proc_type}")
                 
@@ -286,9 +289,23 @@ def main():
             else:
                 raise Exception(f"unsupported proc type {proc_type}")
     
+    def _print_task_logs(future):
+        for log_attr in ('stdout', 'stderr'):
+            log_path = getattr(future, log_attr, None)
+            if log_path and os.path.exists(log_path):
+                print(f"\n=== Task {log_attr} ({log_path}) ===", file=sys.stderr)
+                with open(log_path) as f:
+                    print(f.read(), file=sys.stderr)
+
     for future in futures:
         if future:
-            future.exception()
+            try:
+                future.result()
+                if args.debug:
+                    _print_task_logs(future)
+            except Exception:
+                _print_task_logs(future)
+                raise
     
     parsl.dfk().cleanup()
     # tag bias

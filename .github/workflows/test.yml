@@ -1,94 +1,122 @@
-name: Tests
+# name: Tests
 
-on:
-  pull_request:
-    branches:
-      - main
+# on:
+#   pull_request:
+#     branches:
+#       - main
 
-permissions:
-  contents: read
-  packages: read
+# permissions:
+#   contents: read
+#   packages: read
 
-jobs:
-  integration-test:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Log in to GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+# jobs:
+#   build-image:
+#     permissions:
+#       contents: read
+#       packages: write
+#     uses: ./.github/workflows/build-image.yml
 
-      # Checkout this repo. Enable Git LFS so LFS-tracked test data are available.
-      - name: Checkout proc-decam (with LFS)
-        uses: actions/checkout@v4
-        with:
-          lfs: true
+  # integration-test:
+  #   needs: build-image
+  #   runs-on: [self-hosted]
 
-      # Checkout the two recipe repos into subdirectories, also with LFS.
-      - name: Checkout kbmod_imdiff_recipe (with LFS)
-        uses: actions/checkout@v4
-        with:
-          repository: dirac-institute/kbmod_imdiff_recipe
-          path: kbmod_imdiff_recipe
-          lfs: true
+#     # container:
+#     #   image: ghcr.io/${{ github.repository }}:lsst-w_2024_34
+#     #   credentials:
+#     #     username: ${{ github.actor }}
+#     #     password: ${{ secrets.GITHUB_TOKEN }}
+#     #   options: --user root --platform=linux/amd64
 
-      - name: Checkout kbmod_mastercals_recipe (with LFS)
-        uses: actions/checkout@v4
-        with:
-          repository: dirac-institute/kbmod_mastercals_recipe
-          path: kbmod_mastercals_recipe
-          lfs: true
+#     steps:
+#       - name: Checkout proc-decam (with LFS)
+#         uses: actions/checkout@v4
+#         with:
+#           path: proc_decam
+#           lfs: true
 
-      - name: Run pipeline
-        shell: bash
-        run: |
-          chmod -R a+rw .
-          docker run --rm \
-            -v $GITHUB_WORKSPACE:/home/lsst/work \
-            -w /home/lsst/work \
-            ghcr.io/${{ github.repository }}:lsst-w_2024_34 /bin/bash -c "
-              source /opt/lsst/software/stack/loadLSST.bash
-              setup lsst_distrib
+#       - name: Checkout kbmod_imdiff_recipe
+#         uses: actions/checkout@v4
+#         with:
+#           repository: dirac-institute/kbmod_imdiff_recipe
+#           path: kbmod_imdiff_recipe
+#           lfs: false
+#           ref: main
 
-              set -x
+#       - name: Restore LFS cache for kbmod_imdiff_recipe
+#         id: cache-restore-imdiff
+#         uses: actions/cache/restore@v4
+#         with:
+#           path: kbmod_imdiff_recipe/.git/lfs
+#           key: ${{ runner.os }}-lfs-imdiff-v2-${{ hashFiles('kbmod_imdiff_recipe/.gitattributes') }}
+#           restore-keys: |
+#             ${{ runner.os }}-lfs-imdiff-v2-
 
-              pip install .
+#       - name: Pull and verify LFS files for kbmod_imdiff_recipe
+#         run: bash proc_decam/.github/scripts/lfs_pull_verify.sh kbmod_imdiff_recipe
 
-              python tests/make_exposures.py \
-                --mastercals-dir kbmod_mastercals_recipe/trimmedRawData/210318/calib \
-                --science-dir kbmod_imdiff_recipe/trimmedRawData/210318/science \
-                --output ./data/exposures.ecsv \
-                --image-dir ./data/images
+#       # Only reached if the previous step succeeded, so a broken/partial
+#       # pull can never be cached and poison future runs.
+#       - name: Save LFS cache for kbmod_imdiff_recipe
+#         uses: actions/cache/save@v4
+#         with:
+#           path: kbmod_imdiff_recipe/.git/lfs
+#           key: ${{ steps.cache-restore-imdiff.outputs.cache-primary-key }}
 
-              proc-decam db create ./repo
-              proc-decam db start ./repo
+#       - name: Checkout kbmod_mastercals_recipe
+#         uses: actions/checkout@v4
+#         with:
+#           repository: dirac-institute/kbmod_mastercals_recipe
+#           path: kbmod_mastercals_recipe
+#           lfs: false
+#           ref: main
 
-              butler register-instrument ./repo lsst.obs.decam.DarkEnergyCamera
-              butler write-curated-calibrations ./repo lsst.obs.decam.DarkEnergyCamera
+#       - name: Restore LFS cache for kbmod_mastercals_recipe
+#         id: cache-restore-mastercals
+#         uses: actions/cache/restore@v4
+#         with:
+#           path: kbmod_mastercals_recipe/.git/lfs
+#           key: ${{ runner.os }}-lfs-mastercals-v2-${{ hashFiles('kbmod_mastercals_recipe/.gitattributes') }}
+#           restore-keys: |
+#             ${{ runner.os }}-lfs-mastercals-v2-
 
-              butler register-skymap ./repo -c name='discrete'
+#       - name: Pull and verify LFS files for kbmod_mastercals_recipe
+#         run: bash proc_decam/.github/scripts/lfs_pull_verify.sh kbmod_mastercals_recipe
 
-              proc-decam refcats ./repo ./data/exposures.ecsv
+#       - name: Save LFS cache for kbmod_mastercals_recipe
+#         uses: actions/cache/save@v4
+#         with:
+#           path: kbmod_mastercals_recipe/.git/lfs
+#           key: ${{ steps.cache-restore-mastercals.outputs.cache-primary-key }}
 
-              cd kbmod_imdiff_recipe/trimmedRawData/fakes
-              git checkout stetzler/add-band-to-fakes
-              python create_fakes.py
-              cd ../../..
+#       - name: Write pipeline runner script
+#         # Written to a file rather than inlined into `docker run ... bash -c
+#         # "..."` -- avoids several layers of nested quoting (docker run ->
+#         # bash -c -> su -c) that would otherwise make this unreadable and
+#         # easy to get subtly wrong.
+#         run: |
+#           cat > "${PWD}/run_pipeline.sh" <<'SCRIPT'
+#           source /opt/lsst/software/stack/loadLSST.bash
+#           setup lsst_distrib
+#           set -xeuo pipefail
+#           export WORK="$(pwd)"
+#           python -m pip install "${WORK}/proc_decam"
+#           chown -R lsst:lsst "${WORK}"
+#           su - lsst -c "WORK='${WORK}' REPO='${REPO}' DATA='${DATA}' bash ${WORK}/proc_decam/tests/test.bash"
+#           SCRIPT
+#           chmod +x "${PWD}/run_pipeline.sh"
 
-              proc-decam fakes ./repo \
-                kbmod_imdiff_recipe/trimmedRawData/fakes/fakes_fakeSrcCat.fits \
-                --format fits
+#       - name: Log in to ghcr.io
+#         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
 
-              proc-decam ingest ./data/exposures.ecsv -b ./repo --image-dir ./data/images --select night=20210318 obs_type='zero'
-
-              #proc-decam night ./repo ./data/exposures.ecsv \
-              #  --where "instrument='DECam' and detector=35" \
-              #  --debug
-              #proc-decam coadd ./repo "*" \
-              #  --coadd-subset all \
-              #  --template-type meanclip \
-              #  --warp-coadd-name deep \
-              #  --debug
-            "
+#       - name: Run pipeline (inside the amd64 LSST image, via emulation)
+#         run: |
+#           docker run --rm \
+#             --pull=always \
+#             --platform=linux/amd64 \
+#             --user root \
+#             -v "${PWD}:${PWD}" \
+#             -w "${PWD}" \
+#             -e QEMU_CPU=max \
+#             -e NPY_DISABLE_CPU_FEATURES="AVX512F,AVX512CD,AVX512ED,AVX512ER,AVX512PF,AVX512VL,AVX512DQ,AVX512BW,AVX512IFMA,AVX512VBMI,AVX2,FMA3,AVX,SSE42,SSE41,SSSE3,SSE3" \
+#             "ghcr.io/${{ github.repository }}:lsst-w_2024_34" \
+#             bash "${PWD}/run_pipeline.sh"

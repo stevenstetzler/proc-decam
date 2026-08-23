@@ -8,10 +8,16 @@ def main():
     parser.add_argument("repo")
     parser.add_argument("fakes")
     parser.add_argument("--collection", default="fakes")
+    parser.add_argument("--format", default=None,
+                        help="File format passed to astropy.table.Table.read (e.g. 'fits', 'ascii.ecsv'). "
+                             "If omitted, astropy will attempt auto-detection.")
 
     args = parser.parse_args()
 
-    fakes = astropy.table.Table.read(args.fakes)
+    read_kwargs = {}
+    if args.format is not None:
+        read_kwargs["format"] = args.format
+    fakes = astropy.table.Table.read(args.fakes, **read_kwargs)
 
     def rename_if_not_exist(x, y, default=None):
         if y not in fakes.columns:

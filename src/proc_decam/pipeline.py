@@ -20,6 +20,7 @@ and a set of command line commands to run
 """
 import logging
 import os
+import sys
 
 logging.basicConfig()
 logger = logging.getLogger(__name__)
@@ -66,6 +67,7 @@ def main():
     parser.add_argument("--log-level", default="INFO")
     parser.add_argument("--slurm", action="store_true")
     parser.add_argument("--workers", "-J", type=int, default=4)
+    parser.add_argument("--debug", action="store_true")
 
     args = parser.parse_args()
     
@@ -165,9 +167,23 @@ def main():
             inputs = [future]
             futures.append(future)
     
+    def _print_task_logs(future):
+        for log_attr in ('stdout', 'stderr'):
+            log_path = getattr(future, log_attr, None)
+            if log_path and os.path.exists(log_path):
+                print(f"\n=== Task {log_attr} ({log_path}) ===", file=sys.stderr)
+                with open(log_path) as f:
+                    print(f.read(), file=sys.stderr)
+
     for future in futures:
         if future:
-            future.exception()
+            try:
+                future.result()
+                if args.debug:
+                    _print_task_logs(future)
+            except Exception:
+                _print_task_logs(future)
+                raise
 
     parsl.dfk().cleanup()
 

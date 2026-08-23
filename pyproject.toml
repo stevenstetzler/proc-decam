@@ -22,6 +22,7 @@ requires-python = ">=3.9"
 dependencies = [
     "astropy",
     "joblib",
+    "psycopg2-binary",
     "get-lsst-refcats @ git+https://github.com/dirac-institute/lsst_refcats/"
 ]
 description = "Process a DECam imaging survey using the LSST Science Pipelines."

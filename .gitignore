@@ -216,3 +216,5 @@ data
 # lsst
 submit
 repo*
+
+_version.py
