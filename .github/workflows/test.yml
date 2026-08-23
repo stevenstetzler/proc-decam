@@ -18,7 +18,7 @@ jobs:
 
   integration-test:
     needs: build-image
-    runs-on: [self-hosted, linux, arm64]
+    runs-on: [self-hosted]
 
     # container:
     #   image: ghcr.io/${{ github.repository }}:lsst-w_2024_34
