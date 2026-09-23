@@ -410,11 +410,11 @@ subsets:
   # step3h: # tract
   #   subset:
   #   - consolidateObjectTable
-  step4a: # skymap/detector/visit
+  step4a: # skymap/detector/visit; subtractImages is required to be in the same subset as getTemplate
     subset:
     - getTemplate
-  step4b: # detector/visit
     - subtractImages
+  step4b: # detector/visit
     - detectAndMeasureDiaSources
     - transformDiaSourceCat
   # cannot be run due to lack of deepCoadd_ref
