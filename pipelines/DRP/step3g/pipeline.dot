@@ -1,0 +1,16 @@
+digraph Pipeline {
+graph [splines="ortho", nodesep="0.5", ranksep="0.75"];
+node [shape="box", fontname="Monospace", fontsize="14", margin="0.2,0.1", penwidth="3"];
+edge [color="black", arrowsize="1.5", penwidth="1.5", pad="10mm"];
+"writeObjectTable:2" [style="filled", color="black", fillcolor="#B1F2EF", label=<<TABLE BORDER="0" CELLPADDING="5"><TR><TD ALIGN="LEFT"><B><FONT POINT-SIZE="18">writeObjectTable</FONT></B></TD></TR><TR><TD ALIGN="LEFT">lsst.pipe.tasks.postprocess.WriteObjectTableTask</TD></TR><TR><TD ALIGN="LEFT"><I>dimensions:</I>&nbsp;{patch}</TD></TR></TABLE>>];
+"deepCoadd_ref:0" [style="rounded,filled,bold", color="#00BABC", fillcolor="#F5F5F5", label=<<TABLE BORDER="0" CELLPADDING="5"><TR><TD ALIGN="LEFT"><B><FONT POINT-SIZE="18">deepCoadd_ref</FONT></B></TD></TR><TR><TD ALIGN="LEFT"><I>dimensions:</I>&nbsp;{patch}</TD></TR><TR><TD ALIGN="LEFT"><I>storage class:</I>&nbsp;SourceCatalog</TD></TR></TABLE>>];
+"deepCoadd_obj:0" [style="rounded,filled,bold", color="#00BABC", fillcolor="#F5F5F5", label=<<TABLE BORDER="0" CELLPADDING="5"><TR><TD ALIGN="LEFT"><B><FONT POINT-SIZE="18">deepCoadd_obj</FONT></B></TD></TR><TR><TD ALIGN="LEFT"><I>dimensions:</I>&nbsp;{patch}</TD></TR><TR><TD ALIGN="LEFT"><I>storage class:</I>&nbsp;DataFrame</TD></TR></TABLE>>];
+"transformObjectTable:2" [style="filled", color="black", fillcolor="#B1F2EF", label=<<TABLE BORDER="0" CELLPADDING="5"><TR><TD ALIGN="LEFT"><B><FONT POINT-SIZE="18">transformObjectTable</FONT></B></TD></TR><TR><TD ALIGN="LEFT">lsst.pipe.tasks.postprocess.TransformObjectCatalogTask</TD></TR><TR><TD ALIGN="LEFT"><I>dimensions:</I>&nbsp;{patch}</TD></TR></TABLE>>];
+"objectTable:0" [style="rounded,filled,bold", color="#00BABC", fillcolor="#F5F5F5", label=<<TABLE BORDER="0" CELLPADDING="5"><TR><TD ALIGN="LEFT"><B><FONT POINT-SIZE="18">objectTable</FONT></B></TD></TR><TR><TD ALIGN="LEFT"><I>dimensions:</I>&nbsp;{patch}</TD></TR><TR><TD ALIGN="LEFT"><I>storage class:</I>&nbsp;DataFrame</TD></TR></TABLE>>];
+"11c24291:0" [style="rounded,filled,bold", color="#00BABC", fillcolor="#F5F5F5", label=<<TABLE BORDER="0" CELLPADDING="5"><TR><TD ALIGN="LEFT"><B><FONT POINT-SIZE="18">deepCoadd_meas</FONT></B></TD></TR><TR><TD ALIGN="LEFT"><B><FONT POINT-SIZE="18">deepCoadd_forced_src</FONT></B></TD></TR><TR><TD ALIGN="LEFT"><I>dimensions:</I>&nbsp;{band, patch}</TD></TR><TR><TD ALIGN="LEFT"><I>storage class:</I>&nbsp;SourceCatalog</TD></TR></TABLE>>];
+"writeObjectTable:2" -> "deepCoadd_obj:0";
+"deepCoadd_ref:0" -> "writeObjectTable:2";
+"deepCoadd_obj:0" -> "transformObjectTable:2";
+"transformObjectTable:2" -> "objectTable:0";
+"11c24291:0" -> "writeObjectTable:2";
+}

@@ -390,37 +390,46 @@ subsets:
   step3b: # patch/band
     subset:
     - assembleCoadd # create coadd
+    - detection # detect on coadd
+    - measure # measure
   step3c: # patch
     subset:
-    - detection # detect on coadd
     - mergeDetections # merge 
     - deblend # deblend
-    - measure # measure
-    - mergeMeasurements 
-    - forcedPhotCoadd
-    - writeObjectTable
-    - transformObjectTable
-  step3d: # tract
+  step3d: # patch/band
     subset:
-    - consolidateObjectTable
-  step4a: # detector/visit
+    - measure # measure
+  # the pipeline fails here because of: KeyError: "Field with name 'merge_peak_VR' not found"
+  # step3e: # patch
+  #   - mergeMeasurements 
+  # step3f: # patch/band
+  #   - forcedPhotCoadd
+  # step3g: # patch
+  #   - writeObjectTable
+  #   - transformObjectTable
+  # step3h: # tract
+  #   subset:
+  #   - consolidateObjectTable
+  step4a: # skymap/detector/visit
     subset:
     - getTemplate
+  step4b: # detector/visit
     - subtractImages
     - detectAndMeasureDiaSources
-  step4b: # detector/visit
-    subset:
     - transformDiaSourceCat
-    - forcedPhotDiffim
-    - forcedPhotCcd
-  step4c: # visit
+  # cannot be run due to lack of deepCoadd_ref
+  # step4c: # tract/detector/visit
+  #   subset:
+  #   - forcedPhotDiffim
+  #   - forcedPhotCcd
+  step4d: # visit
     subset:
     - consolidateDiaSourceTable
-  step4d: # patch
+  step4e: # patch
     subset:
     - drpAssociation
     - drpDiaCalculation
-  step4e: # detector/tract/visit
+  step4f: # detector/tract/visit
     subset:
     - forcedPhotCcdOnDiaObjects
     - forcedPhotDiffOnDiaObjects

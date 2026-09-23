@@ -2,15 +2,9 @@ digraph Pipeline {
 graph [splines="ortho", nodesep="0.5", ranksep="0.75"];
 node [shape="box", fontname="Monospace", fontsize="14", margin="0.2,0.1", penwidth="3"];
 edge [color="black", arrowsize="1.5", penwidth="1.5", pad="10mm"];
-"drpAssociation:2" [style="filled", color="black", fillcolor="#B1F2EF", label=<<TABLE BORDER="0" CELLPADDING="5"><TR><TD ALIGN="LEFT"><B><FONT POINT-SIZE="18">drpAssociation</FONT></B></TD></TR><TR><TD ALIGN="LEFT">lsst.pipe.tasks.drpAssociationPipe.DrpAssociationPipeTask</TD></TR><TR><TD ALIGN="LEFT"><I>dimensions:</I>&nbsp;{patch}</TD></TR></TABLE>>];
+"consolidateDiaSourceTable:2" [style="filled", color="black", fillcolor="#B1F2EF", label=<<TABLE BORDER="0" CELLPADDING="5"><TR><TD ALIGN="LEFT"><B><FONT POINT-SIZE="18">consolidateDiaSourceTable</FONT></B></TD></TR><TR><TD ALIGN="LEFT">lsst.pipe.tasks.postprocess.ConsolidateSourceTableTask</TD></TR><TR><TD ALIGN="LEFT"><I>dimensions:</I>&nbsp;{visit}</TD></TR></TABLE>>];
 "deepDiff_diaSrcTable:0" [style="rounded,filled,bold", color="#00BABC", fillcolor="#F5F5F5", label=<<TABLE BORDER="0" CELLPADDING="5"><TR><TD ALIGN="LEFT"><B><FONT POINT-SIZE="18">deepDiff_diaSrcTable</FONT></B></TD></TR><TR><TD ALIGN="LEFT"><I>dimensions:</I>&nbsp;{detector, visit}</TD></TR><TR><TD ALIGN="LEFT"><I>storage class:</I>&nbsp;DataFrame</TD></TR></TABLE>>];
-"skyMap:0" [style="rounded,filled,bold", color="#00BABC", fillcolor="#F5F5F5", label=<<TABLE BORDER="0" CELLPADDING="5"><TR><TD ALIGN="LEFT"><B><FONT POINT-SIZE="18">skyMap</FONT></B></TD></TR><TR><TD ALIGN="LEFT"><I>dimensions:</I>&nbsp;{skymap}</TD></TR><TR><TD ALIGN="LEFT"><I>storage class:</I>&nbsp;SkyMap</TD></TR></TABLE>>];
-"drpDiaCalculation:2" [style="filled", color="black", fillcolor="#B1F2EF", label=<<TABLE BORDER="0" CELLPADDING="5"><TR><TD ALIGN="LEFT"><B><FONT POINT-SIZE="18">drpDiaCalculation</FONT></B></TD></TR><TR><TD ALIGN="LEFT">lsst.pipe.tasks.drpDiaCalculationPipe.DrpDiaCalculationPipeTask</TD></TR><TR><TD ALIGN="LEFT"><I>dimensions:</I>&nbsp;{patch}</TD></TR></TABLE>>];
-"deepDiff_fullDiaObjTable:0" [style="rounded,filled,bold", color="#00BABC", fillcolor="#F5F5F5", label=<<TABLE BORDER="0" CELLPADDING="5"><TR><TD ALIGN="LEFT"><B><FONT POINT-SIZE="18">deepDiff_fullDiaObjTable</FONT></B></TD></TR><TR><TD ALIGN="LEFT"><I>dimensions:</I>&nbsp;{patch}</TD></TR><TR><TD ALIGN="LEFT"><I>storage class:</I>&nbsp;DataFrame</TD></TR></TABLE>>];
-"aa54c164:0" [style="rounded,filled,bold", color="#00BABC", fillcolor="#F5F5F5", label=<<TABLE BORDER="0" CELLPADDING="5"><TR><TD ALIGN="LEFT"><B><FONT POINT-SIZE="18">deepDiff_diaObjTable</FONT></B></TD></TR><TR><TD ALIGN="LEFT"><B><FONT POINT-SIZE="18">deepDiff_assocDiaSrcTable</FONT></B></TD></TR><TR><TD ALIGN="LEFT"><I>dimensions:</I>&nbsp;{patch}</TD></TR><TR><TD ALIGN="LEFT"><I>storage class:</I>&nbsp;DataFrame</TD></TR></TABLE>>];
-"drpAssociation:2" -> "aa54c164:0";
-"deepDiff_diaSrcTable:0" -> "drpAssociation:2";
-"skyMap:0" -> "drpAssociation:2";
-"drpDiaCalculation:2" -> "deepDiff_fullDiaObjTable:0";
-"aa54c164:0" -> "drpDiaCalculation:2";
+"diaSourceTable:0" [style="rounded,filled,bold", color="#00BABC", fillcolor="#F5F5F5", label=<<TABLE BORDER="0" CELLPADDING="5"><TR><TD ALIGN="LEFT"><B><FONT POINT-SIZE="18">diaSourceTable</FONT></B></TD></TR><TR><TD ALIGN="LEFT"><I>dimensions:</I>&nbsp;{visit}</TD></TR><TR><TD ALIGN="LEFT"><I>storage class:</I>&nbsp;DataFrame</TD></TR></TABLE>>];
+"consolidateDiaSourceTable:2" -> "diaSourceTable:0";
+"deepDiff_diaSrcTable:0" -> "consolidateDiaSourceTable:2";
 }
