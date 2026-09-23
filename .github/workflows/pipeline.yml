@@ -74,36 +74,43 @@ jobs:
             -v $GITHUB_WORKSPACE:/home/lsst/work \
             -w /home/lsst/work \
             ghcr.io/${{ github.repository }}:lsst-w_2024_34 /bin/bash -c "
-              source /opt/lsst/software/stack/loadLSST.bash
-              setup lsst_distrib
-
               set -xe
 
               # graphviz isn't in the image; only needed here for --pipeline-dot
               # rendering below, so install it at runtime rather than growing
-              # the image for every other job that pulls it.
+              # the image for every other job that pulls it. Needs root; but
+              # \`pg_ctl\` (via \`proc-decam db start\` below) refuses to run as
+              # root, so de-escalate to the image's default lsst user (env is
+              # preserved - no \`-\`) for everything else.
               yum -y install graphviz
 
-              pip install .
+              su lsst -c '
+                source /opt/lsst/software/stack/loadLSST.bash
+                setup lsst_distrib
 
-              # The image already has a fully-initialized butler repo baked
-              # in at \$REPO (see Dockerfile: db create, register-instrument,
-              # write-curated-calibrations, defects, register-skymap all ran
-              # at build time). Reuse it instead of redoing that setup here -
-              # it was stopped at the end of the build, so just start it.
-              proc-decam db start \$REPO
+                set -xe
 
-              pipetask build -b \$REPO -p pipelines/flat.yaml
-              pipetask build -b \$REPO -p pipelines/bias.yaml
-              pipetask build -b \$REPO -p pipelines/DRP.yaml
+                pip install .
 
-              for subset in step0 step1 step1b step2a step2b step2c step2d step2e step2f step3a step3b step3c step3d step4a step4b step4d step4e step4f; do
-                out=pipelines/DRP/\$subset
-                mkdir -p \$out
-                pipetask build -b \$REPO -p \"pipelines/DRP.yaml#\$subset\" --pipeline-dot \"\$out/pipeline.dot\"
-                dot \"\$out/pipeline.dot\" -Tsvg > \"\$out/pipeline.svg\"
-                dot \"\$out/pipeline.dot\" -Tpng > \"\$out/pipeline.png\"
-              done
+                # The image already has a fully-initialized butler repo baked
+                # in at \$REPO (see Dockerfile: db create, register-instrument,
+                # write-curated-calibrations, defects, register-skymap all ran
+                # at build time). Reuse it instead of redoing that setup here -
+                # it was stopped at the end of the build, so just start it.
+                proc-decam db start \$REPO
+
+                pipetask build -b \$REPO -p pipelines/flat.yaml
+                pipetask build -b \$REPO -p pipelines/bias.yaml
+                pipetask build -b \$REPO -p pipelines/DRP.yaml
+
+                for subset in step0 step1 step1b step2a step2b step2c step2d step2e step2f step3a step3b step3c step3d step4a step4b step4d step4e step4f; do
+                  out=pipelines/DRP/\$subset
+                  mkdir -p \$out
+                  pipetask build -b \$REPO -p \"pipelines/DRP.yaml#\$subset\" --pipeline-dot \"\$out/pipeline.dot\"
+                  dot \"\$out/pipeline.dot\" -Tsvg > \"\$out/pipeline.svg\"
+                  dot \"\$out/pipeline.dot\" -Tpng > \"\$out/pipeline.png\"
+                done
+              '
             "
 
       - name: Upload DRP pipeline visualizations
