@@ -4,6 +4,25 @@ on:
   pull_request:
     branches:
       - main
+    paths:
+      # The workflow itself and what it calls/runs.
+      - .github/workflows/test.yml
+      - .github/workflows/build-image.yml
+      - .github/scripts/lfs_pull_verify.sh
+      - Dockerfile
+      # Only the modules actually on integration-test's call path (traced
+      # import-by-import): cli.py dispatches every subcommand, db.py pulls
+      # `popen` from refcats.py, and refcats/fakes/ingest/make_exposures.py
+      # are invoked directly. night.py/coadd.py/visualize.py/parsl/** etc.
+      # are NOT touched by this job (it stops at `ingest`), so they're
+      # deliberately excluded here.
+      - pyproject.toml
+      - src/proc_decam/cli.py
+      - src/proc_decam/db.py
+      - src/proc_decam/refcats.py
+      - src/proc_decam/fakes.py
+      - src/proc_decam/ingest.py
+      - tests/make_exposures.py
 
 permissions:
   contents: read
