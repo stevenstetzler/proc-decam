@@ -36,35 +36,24 @@ jobs:
       # a graph without running anything - no data or butler repo needed.
       # DRP.yaml references proc_decam's own ApplyDefectsTask, so proc-decam
       # needs to be installed first for that one to resolve.
-      - name: Build pipelines
-        shell: bash
-        run: |
-          chmod -R a+rw .
-          docker run --rm \
-            -v $GITHUB_WORKSPACE:/home/lsst/work \
-            -w /home/lsst/work \
-            ghcr.io/${{ github.repository }}:lsst-w_2024_34 /bin/bash -c "
-              source /opt/lsst/software/stack/loadLSST.bash
-              setup lsst_distrib
-
-              set -x
-
-              pip install .
-
-              pipetask build -p pipelines/flat.yaml
-              pipetask build -p pipelines/bias.yaml
-              pipetask build -p pipelines/DRP.yaml
-            "
-
-      # Renders a dot/svg/png per DRP subset, same as pipelines/viz.sh.
-      # Only the subsets actually enabled in DRP.yaml's `subsets:` block are
-      # listed here - step3e-h and step4c are commented out there (real
-      # pipeline bugs, see the comments in DRP.yaml), so `pipetask build`
-      # would fail on them; they're left out rather than making this step
-      # fail. Uploaded as a workflow artifact instead of committed to the
-      # repo - see the docs branch for where an exemplar processed image
-      # will eventually live (tracked separately).
-      - name: Generate DRP pipeline visualizations
+      #
+      # Both the whole-pipeline validation and the per-subset visualization
+      # generation run in this one `docker run` (one `pip install .`, one
+      # `chmod`) rather than two separate steps: `pip install .` leaves
+      # build/ and src/proc_decam.egg-info/ behind, owned by the container's
+      # internal user, and a *second* docker-run step's host-side
+      # `chmod -R a+rw .` can't touch those (different uid across the bind
+      # mount) - splitting this into two steps failed on exactly that.
+      #
+      # Renders a dot/svg/png per DRP subset, same as pipelines/viz.sh. Only
+      # the subsets actually enabled in DRP.yaml's `subsets:` block are
+      # listed - step3e-h and step4c are commented out there (real pipeline
+      # bugs, see the comments in DRP.yaml), so `pipetask build` would fail
+      # on them; left out rather than making this step fail. Uploaded as a
+      # workflow artifact instead of committed to the repo - see the docs
+      # branch for where an exemplar processed image will eventually live
+      # (tracked separately).
+      - name: Build pipelines and generate DRP visualizations
         shell: bash
         run: |
           chmod -R a+rw .
@@ -78,6 +67,10 @@ jobs:
               set -xe
 
               pip install .
+
+              pipetask build -p pipelines/flat.yaml
+              pipetask build -p pipelines/bias.yaml
+              pipetask build -p pipelines/DRP.yaml
 
               for subset in step0 step1 step1b step2a step2b step2c step2d step2e step2f step3a step3b step3c step3d step4a step4b step4d step4e step4f; do
                 out=pipelines/DRP/\$subset
