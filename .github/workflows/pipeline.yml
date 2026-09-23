@@ -61,9 +61,10 @@ jobs:
       # `chmod -R a+rw .` can't touch those (different uid across the bind
       # mount) - splitting this into two steps failed on exactly that.
       #
-      # Uploaded as a workflow artifact instead of committed to the repo -
-      # see the docs branch for where an exemplar processed image will
-      # eventually live (tracked separately).
+      # Renders to pipelines/**/pipeline.{dot,svg,png,jpg,pdf} (gitignored),
+      # currently discarded when the job ends. Publishing these (e.g.
+      # committed to a docs/gh-pages branch for a pipeline preview page) is
+      # scoped out separately.
       - name: Build pipelines and generate DRP visualizations
         shell: bash
         run: |
@@ -94,10 +95,3 @@ jobs:
                 bash pipelines/viz-all.sh
               '
             "
-
-      - name: Upload DRP pipeline visualizations
-        uses: actions/upload-artifact@v4
-        with:
-          name: drp-pipeline-visualizations
-          path: pipelines/**/pipeline.pdf
-          if-no-files-found: error
