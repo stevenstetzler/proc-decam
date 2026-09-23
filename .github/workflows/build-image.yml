@@ -2,19 +2,27 @@ name: Build and Push Docker Image
 
 on:
   workflow_dispatch:
+  workflow_call:
+    inputs:
+      skip_if_exists:
+        description: >-
+          Skip the build if the image tag already exists. Used by callers
+          (e.g. test.yml) that just need *an* image to exist and shouldn't
+          pay to rebuild an unchanged one on every run.
+        type: boolean
+        default: false
   push:
     branches:
       - main
     paths:
       - Dockerfile
 
-permissions:
-  contents: read
-  packages: write
-
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
     steps:
       - uses: actions/checkout@v4
 
@@ -25,7 +33,23 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      # When called as a prerequisite (workflow_call, e.g. from test.yml) with
+      # skip_if_exists we only need *an* image to exist - skip rebuilding an
+      # unchanged image on every PR. A direct push to main touching the
+      # Dockerfile, or a manual dispatch, always rebuilds so intentional
+      # changes are never skipped.
+      - name: Check if image already exists
+        id: check
+        if: inputs.skip_if_exists
+        run: |
+          if docker manifest inspect ghcr.io/${{ github.repository }}:lsst-w_2024_34 > /dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Build and push image
+        if: steps.check.outputs.exists != 'true'
         uses: docker/build-push-action@v6
         with:
           context: .

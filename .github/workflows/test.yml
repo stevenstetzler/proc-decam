@@ -10,10 +10,16 @@ permissions:
   packages: read
 
 jobs:
+  build-image:
+    permissions:
+      contents: read
+      packages: write
+    uses: ./.github/workflows/build-image.yml
+    with:
+      skip_if_exists: true
+
   integration-test:
-    # Disabled while the CI/CD rework in PR #5 is in progress (blocked on
-    # runner availability). Remove this guard once #5 lands.
-    if: false
+    needs: build-image
     runs-on: ubuntu-latest
     steps:
       - name: Log in to GitHub Container Registry
@@ -29,21 +35,62 @@ jobs:
         with:
           lfs: true
 
-      # Checkout the two recipe repos into subdirectories, also with LFS.
-      - name: Checkout kbmod_imdiff_recipe (with LFS)
+      - name: Checkout kbmod_imdiff_recipe
         uses: actions/checkout@v4
         with:
           repository: dirac-institute/kbmod_imdiff_recipe
           path: kbmod_imdiff_recipe
-          lfs: true
+          lfs: false
 
-      - name: Checkout kbmod_mastercals_recipe (with LFS)
+      - name: Restore LFS cache for kbmod_imdiff_recipe
+        id: cache-restore-imdiff
+        uses: actions/cache/restore@v4
+        with:
+          path: kbmod_imdiff_recipe/.git/lfs
+          key: ${{ runner.os }}-lfs-imdiff-v2-${{ hashFiles('kbmod_imdiff_recipe/.gitattributes') }}
+          restore-keys: |
+            ${{ runner.os }}-lfs-imdiff-v2-
+
+      - name: Pull and verify LFS files for kbmod_imdiff_recipe
+        run: bash .github/scripts/lfs_pull_verify.sh kbmod_imdiff_recipe
+
+      # Only reached if the previous step succeeded, so a broken/partial
+      # pull can never be cached and poison future runs.
+      - name: Save LFS cache for kbmod_imdiff_recipe
+        uses: actions/cache/save@v4
+        with:
+          path: kbmod_imdiff_recipe/.git/lfs
+          key: ${{ steps.cache-restore-imdiff.outputs.cache-primary-key }}
+
+      - name: Checkout kbmod_mastercals_recipe
         uses: actions/checkout@v4
         with:
           repository: dirac-institute/kbmod_mastercals_recipe
           path: kbmod_mastercals_recipe
-          lfs: true
+          lfs: false
 
+      - name: Restore LFS cache for kbmod_mastercals_recipe
+        id: cache-restore-mastercals
+        uses: actions/cache/restore@v4
+        with:
+          path: kbmod_mastercals_recipe/.git/lfs
+          key: ${{ runner.os }}-lfs-mastercals-v2-${{ hashFiles('kbmod_mastercals_recipe/.gitattributes') }}
+          restore-keys: |
+            ${{ runner.os }}-lfs-mastercals-v2-
+
+      - name: Pull and verify LFS files for kbmod_mastercals_recipe
+        run: bash .github/scripts/lfs_pull_verify.sh kbmod_mastercals_recipe
+
+      - name: Save LFS cache for kbmod_mastercals_recipe
+        uses: actions/cache/save@v4
+        with:
+          path: kbmod_mastercals_recipe/.git/lfs
+          key: ${{ steps.cache-restore-mastercals.outputs.cache-primary-key }}
+
+      # Runs on GitHub-hosted ubuntu-latest (genuinely amd64, no emulation
+      # needed). Stops at `ingest` - the heavier `night`/`coadd` pipeline
+      # stages need more compute than a hosted runner provides and are run
+      # separately (see the pipeline-run WIP work) rather than gating PRs.
       - name: Run pipeline
         shell: bash
         run: |
@@ -85,13 +132,4 @@ jobs:
                 --format fits
 
               proc-decam ingest ./data/exposures.ecsv -b ./repo --image-dir ./data/images --select night=20210318 obs_type='zero'
-
-              #proc-decam night ./repo ./data/exposures.ecsv \
-              #  --where "instrument='DECam' and detector=35" \
-              #  --debug
-              #proc-decam coadd ./repo "*" \
-              #  --coadd-subset all \
-              #  --template-type meanclip \
-              #  --warp-coadd-name deep \
-              #  --debug
             "
