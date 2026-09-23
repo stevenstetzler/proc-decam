@@ -60,7 +60,7 @@ class KloneA40Provider(KloneProvider):
     )
 
 class EpycProvider(DefaultsProvider, LocalProvider):
-    defauts = DefaultsProvider.defaults | dict(
+    defaults = DefaultsProvider.defaults | dict(
         min_blocks=1,
         max_blocks=48,
     )

@@ -81,6 +81,7 @@ def main():
     parser.add_argument("--pipeline-slurm", action="store_true")
     parser.add_argument("--provider", default="EpycProvider")
     parser.add_argument("--workers", "-J", type=int, default=4)
+    parser.add_argument("--debug", action="store_true")
     
     args = parser.parse_args()
 
@@ -155,7 +156,7 @@ def main():
     #     cmd += [f"--where \"{args.where}\""]
     # 
     # coadd pipeline
-    steps = ["step3b", "step3c", "step3d"]
+    steps = ["step3b", "step3c", "step3d"]#, "step3e", "step3f", "step3g", "step3h"]
     cmd = [
         "proc-decam",
         "pipeline",
@@ -192,9 +193,23 @@ def main():
     inputs = [future]
     futures.append(future)
 
+    def _print_task_logs(future):
+        for log_attr in ('stdout', 'stderr'):
+            log_path = getattr(future, log_attr, None)
+            if log_path and os.path.exists(log_path):
+                print(f"\n=== Task {log_attr} ({log_path}) ===", file=sys.stderr)
+                with open(log_path) as f:
+                    print(f.read(), file=sys.stderr)
+
     for future in futures:
         if future:
-            future.exception()
+            try:
+                future.result()
+                if args.debug:
+                    _print_task_logs(future)
+            except Exception:
+                _print_task_logs(future)
+                raise
     
     parsl.dfk().cleanup()
 
