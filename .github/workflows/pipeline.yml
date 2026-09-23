@@ -55,3 +55,42 @@ jobs:
               pipetask build -p pipelines/bias.yaml
               pipetask build -p pipelines/DRP.yaml
             "
+
+      # Renders a dot/svg/png per DRP subset, same as pipelines/viz.sh.
+      # Only the subsets actually enabled in DRP.yaml's `subsets:` block are
+      # listed here - step3e-h and step4c are commented out there (real
+      # pipeline bugs, see the comments in DRP.yaml), so `pipetask build`
+      # would fail on them; they're left out rather than making this step
+      # fail. Uploaded as a workflow artifact instead of committed to the
+      # repo - see the docs branch for where an exemplar processed image
+      # will eventually live (tracked separately).
+      - name: Generate DRP pipeline visualizations
+        shell: bash
+        run: |
+          chmod -R a+rw .
+          docker run --rm \
+            -v $GITHUB_WORKSPACE:/home/lsst/work \
+            -w /home/lsst/work \
+            ghcr.io/${{ github.repository }}:lsst-w_2024_34 /bin/bash -c "
+              source /opt/lsst/software/stack/loadLSST.bash
+              setup lsst_distrib
+
+              set -xe
+
+              pip install .
+
+              for subset in step0 step1 step1b step2a step2b step2c step2d step2e step2f step3a step3b step3c step3d step4a step4b step4d step4e step4f; do
+                out=pipelines/DRP/\$subset
+                mkdir -p \$out
+                pipetask build -p \"pipelines/DRP.yaml#\$subset\" --pipeline-dot \"\$out/pipeline.dot\"
+                dot \"\$out/pipeline.dot\" -Tsvg > \"\$out/pipeline.svg\"
+                dot \"\$out/pipeline.dot\" -Tpng > \"\$out/pipeline.png\"
+              done
+            "
+
+      - name: Upload DRP pipeline visualizations
+        uses: actions/upload-artifact@v4
+        with:
+          name: drp-pipeline-visualizations
+          path: pipelines/DRP/*/pipeline.*
+          if-no-files-found: error
