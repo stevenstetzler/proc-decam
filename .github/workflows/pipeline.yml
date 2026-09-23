@@ -44,10 +44,15 @@ jobs:
       # subtractImages in step4a (see DRP.yaml) fixes that without needing a
       # butler registry at all.
       #
-      # Uses pipelines/viz.sh (the same tool used for local/manual builds)
-      # rather than hand-rolled pipetask/dot calls, run via bin/setup.sh so
-      # $PROC_DECAM_DIR points at this checkout and viz.sh's output lands
-      # under pipelines/ here rather than an install location.
+      # Uses pipelines/viz-all.sh, which discovers and builds every subset of
+      # flat.yaml, bias.yaml and DRP.yaml via pipelines/viz.sh (the same tool
+      # used for local/manual builds) rather than a whole-file build (which
+      # can fail - e.g. flat.yaml as a whole - even when every subset builds
+      # fine) or a hardcoded subset list (which goes stale as subsets
+      # change). Run via bin/setup.sh so $PROC_DECAM_DIR points at this
+      # checkout and viz.sh's output lands under pipelines/ here rather than
+      # an install location. See viz-all.sh for the excluded/disabled
+      # subsets.
       #
       # Everything runs in one `docker run` (one `pip install .`, one
       # `chmod`) rather than separate steps: `pip install .` leaves build/
@@ -56,13 +61,9 @@ jobs:
       # `chmod -R a+rw .` can't touch those (different uid across the bind
       # mount) - splitting this into two steps failed on exactly that.
       #
-      # Only the subsets actually enabled in DRP.yaml's `subsets:` block are
-      # listed - step3e-h and step4c are commented out there (real pipeline
-      # bugs, see the comments in DRP.yaml), so `pipetask build` would fail
-      # on them; left out rather than making this step fail. Uploaded as a
-      # workflow artifact instead of committed to the repo - see the docs
-      # branch for where an exemplar processed image will eventually live
-      # (tracked separately).
+      # Uploaded as a workflow artifact instead of committed to the repo -
+      # see the docs branch for where an exemplar processed image will
+      # eventually live (tracked separately).
       - name: Build pipelines and generate DRP visualizations
         shell: bash
         run: |
@@ -90,13 +91,7 @@ jobs:
 
                 pip install .
 
-                bash pipelines/viz.sh pipelines/flat.yaml
-                bash pipelines/viz.sh pipelines/bias.yaml
-                bash pipelines/viz.sh pipelines/DRP.yaml
-
-                for subset in step0 step1 step1b step2a step2b step2c step2d step2e step2f step3a step3b step3c step3d step4a step4b step4d step4e step4f; do
-                  bash pipelines/viz.sh \"pipelines/DRP.yaml#\$subset\"
-                done
+                bash pipelines/viz-all.sh
               '
             "
 
