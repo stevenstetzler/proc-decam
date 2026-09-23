@@ -1,0 +1,57 @@
+name: Pipeline
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+  packages: read
+
+jobs:
+  build-image:
+    permissions:
+      contents: read
+      packages: write
+    uses: ./.github/workflows/build-image.yml
+    with:
+      skip_if_exists: true
+
+  build-pipelines:
+    needs: build-image
+    runs-on: ubuntu-latest
+    steps:
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Checkout proc-decam
+        uses: actions/checkout@v4
+
+      # `pipetask build` resolves a pipeline's tasks/configs/connections into
+      # a graph without running anything - no data or butler repo needed.
+      # DRP.yaml references proc_decam's own ApplyDefectsTask, so proc-decam
+      # needs to be installed first for that one to resolve.
+      - name: Build pipelines
+        shell: bash
+        run: |
+          chmod -R a+rw .
+          docker run --rm \
+            -v $GITHUB_WORKSPACE:/home/lsst/work \
+            -w /home/lsst/work \
+            ghcr.io/${{ github.repository }}:lsst-w_2024_34 /bin/bash -c "
+              source /opt/lsst/software/stack/loadLSST.bash
+              setup lsst_distrib
+
+              set -x
+
+              pip install .
+
+              pipetask build -p pipelines/flat.yaml
+              pipetask build -p pipelines/bias.yaml
+              pipetask build -p pipelines/DRP.yaml
+            "
