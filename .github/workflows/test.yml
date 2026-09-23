@@ -112,24 +112,23 @@ jobs:
                 --output ./data/exposures.ecsv \
                 --image-dir ./data/images
 
-              proc-decam db create ./repo
-              proc-decam db start ./repo
+              # The image already has a fully-initialized butler repo baked
+              # in at \$REPO (see Dockerfile: db create, register-instrument,
+              # write-curated-calibrations, defects, register-skymap all ran
+              # at build time). Reuse it instead of redoing that setup here -
+              # it was stopped at the end of the build, so just start it.
+              proc-decam db start \$REPO
 
-              butler register-instrument ./repo lsst.obs.decam.DarkEnergyCamera
-              butler write-curated-calibrations ./repo lsst.obs.decam.DarkEnergyCamera
-
-              butler register-skymap ./repo -c name='discrete'
-
-              proc-decam refcats ./repo ./data/exposures.ecsv
+              proc-decam refcats \$REPO ./data/exposures.ecsv
 
               cd kbmod_imdiff_recipe/trimmedRawData/fakes
               git checkout stetzler/add-band-to-fakes
               python create_fakes.py
               cd ../../..
 
-              proc-decam fakes ./repo \
+              proc-decam fakes \$REPO \
                 kbmod_imdiff_recipe/trimmedRawData/fakes/fakes_fakeSrcCat.fits \
                 --format fits
 
-              proc-decam ingest ./data/exposures.ecsv -b ./repo --image-dir ./data/images --select night=20210318 obs_type='zero'
+              proc-decam ingest ./data/exposures.ecsv -b \$REPO --image-dir ./data/images --select night=20210318 obs_type='zero'
             "
