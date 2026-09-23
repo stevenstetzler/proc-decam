@@ -1,0 +1,147 @@
+# WIP: manually-triggered full pipeline run (night/coadd/diff/visualize) on
+# a self-hosted amd64 runner. Blocked until such a runner is registered -
+# see docs/self-hosted-integration-runner.md.
+#
+# Deliberately not wired into `on: pull_request` - this is meant to produce
+# a set of processed images from a real (non-hosted) machine, not to gate
+# PR checks on hardware we don't have. See test.yml for the GH-hosted
+# checks that already run on every PR.
+#
+# Runs natively on amd64 (no --platform/QEMU emulation): the runner is
+# assumed to actually be amd64 hardware, not an emulation workaround for
+# some other architecture.
+
+name: Run Pipeline (self-hosted)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: read
+
+jobs:
+  build-image:
+    permissions:
+      contents: read
+      packages: write
+    uses: ./.github/workflows/build-image.yml
+    with:
+      skip_if_exists: true
+
+  run-pipeline:
+    needs: build-image
+    # `proc-decam-integration` is the label assigned at runner registration
+    # time (see docs/self-hosted-integration-runner.md §5.3) so this job
+    # only lands on that specific machine.
+    runs-on: [self-hosted, linux, x64, proc-decam-integration]
+    concurrency:
+      group: run-pipeline-${{ github.ref }}
+      cancel-in-progress: true
+    timeout-minutes: 90
+    env:
+      WORK: ${{ github.workspace }}
+      REPO: ${{ github.workspace }}/repo
+      DATA: ${{ github.workspace }}/data
+    steps:
+      - name: Checkout proc-decam (with LFS)
+        uses: actions/checkout@v4
+        with:
+          path: proc_decam
+          lfs: true
+
+      - name: Checkout kbmod_imdiff_recipe
+        uses: actions/checkout@v4
+        with:
+          repository: dirac-institute/kbmod_imdiff_recipe
+          path: kbmod_imdiff_recipe
+          lfs: false
+
+      - name: Restore LFS cache for kbmod_imdiff_recipe
+        id: cache-restore-imdiff
+        uses: actions/cache/restore@v4
+        with:
+          path: kbmod_imdiff_recipe/.git/lfs
+          key: ${{ runner.os }}-lfs-imdiff-v2-${{ hashFiles('kbmod_imdiff_recipe/.gitattributes') }}
+          restore-keys: |
+            ${{ runner.os }}-lfs-imdiff-v2-
+
+      - name: Pull and verify LFS files for kbmod_imdiff_recipe
+        run: bash proc_decam/.github/scripts/lfs_pull_verify.sh kbmod_imdiff_recipe
+
+      - name: Save LFS cache for kbmod_imdiff_recipe
+        uses: actions/cache/save@v4
+        with:
+          path: kbmod_imdiff_recipe/.git/lfs
+          key: ${{ steps.cache-restore-imdiff.outputs.cache-primary-key }}
+
+      - name: Checkout kbmod_mastercals_recipe
+        uses: actions/checkout@v4
+        with:
+          repository: dirac-institute/kbmod_mastercals_recipe
+          path: kbmod_mastercals_recipe
+          lfs: false
+
+      - name: Restore LFS cache for kbmod_mastercals_recipe
+        id: cache-restore-mastercals
+        uses: actions/cache/restore@v4
+        with:
+          path: kbmod_mastercals_recipe/.git/lfs
+          key: ${{ runner.os }}-lfs-mastercals-v2-${{ hashFiles('kbmod_mastercals_recipe/.gitattributes') }}
+          restore-keys: |
+            ${{ runner.os }}-lfs-mastercals-v2-
+
+      - name: Pull and verify LFS files for kbmod_mastercals_recipe
+        run: bash proc_decam/.github/scripts/lfs_pull_verify.sh kbmod_mastercals_recipe
+
+      - name: Save LFS cache for kbmod_mastercals_recipe
+        uses: actions/cache/save@v4
+        with:
+          path: kbmod_mastercals_recipe/.git/lfs
+          key: ${{ steps.cache-restore-mastercals.outputs.cache-primary-key }}
+
+      - name: Write pipeline runner script
+        # Written to a file rather than inlined into `docker run ... bash -c
+        # "..."` - avoids several layers of nested quoting (docker run ->
+        # bash -c -> su -c) that would otherwise make this unreadable and
+        # easy to get subtly wrong.
+        run: |
+          cat > "${WORK}/run_pipeline.sh" <<'SCRIPT'
+          source /opt/lsst/software/stack/loadLSST.bash
+          setup lsst_distrib
+          set -xeuo pipefail
+          python -m pip install "${WORK}/proc_decam"
+          chown -R lsst:lsst "${WORK}"
+          # test.bash only runs `db start`, which requires the butler repo
+          # to already exist (see db.py: `create` runs `butler create` +
+          # createdb, `start` just starts postgres against an existing
+          # repo) - so create it first.
+          su - lsst -c "proc-decam db create '${REPO}'"
+          su - lsst -c "WORK='${WORK}' REPO='${REPO}' DATA='${DATA}' bash ${WORK}/proc_decam/tests/test.bash"
+          SCRIPT
+          chmod +x "${WORK}/run_pipeline.sh"
+
+      - name: Log in to ghcr.io
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+
+      - name: Run pipeline
+        run: |
+          docker run --rm \
+            --pull=always \
+            --user root \
+            -v "${WORK}:${WORK}" \
+            -w "${WORK}" \
+            -e WORK -e REPO -e DATA \
+            "ghcr.io/${{ github.repository }}:lsst-w_2024_34" \
+            bash "${WORK}/run_pipeline.sh"
+
+      # `proc-decam visualize` (called from test.bash without
+      # --output-directory, from a cwd of ${WORK}/proc_decam) writes here by
+      # default - see visualize.py's `--output-directory` default of
+      # "images", relative to cwd.
+      - name: Upload processed images
+        uses: actions/upload-artifact@v4
+        with:
+          name: processed-images
+          path: ${{ env.WORK }}/proc_decam/images/**/*.png
+          if-no-files-found: warn
