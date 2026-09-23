@@ -58,6 +58,7 @@ jobs:
         run: |
           chmod -R a+rw .
           docker run --rm \
+            --user root \
             -v $GITHUB_WORKSPACE:/home/lsst/work \
             -w /home/lsst/work \
             ghcr.io/${{ github.repository }}:lsst-w_2024_34 /bin/bash -c "
@@ -65,6 +66,11 @@ jobs:
               setup lsst_distrib
 
               set -xe
+
+              # graphviz isn't in the image; only needed here for --pipeline-dot
+              # rendering below, so install it at runtime rather than growing
+              # the image for every other job that pulls it.
+              yum -y install graphviz
 
               pip install .
 
