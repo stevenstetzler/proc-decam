@@ -33,9 +33,21 @@ jobs:
         uses: actions/checkout@v4
 
       # `pipetask build` resolves a pipeline's tasks/configs/connections into
-      # a graph without running anything - no data or butler repo needed.
-      # DRP.yaml references proc_decam's own ApplyDefectsTask, so proc-decam
-      # needs to be installed first for that one to resolve.
+      # a graph without running anything - no data needed. DRP.yaml references
+      # proc_decam's own ApplyDefectsTask, so proc-decam needs to be installed
+      # first for that one to resolve.
+      #
+      # A per-subset build (`DRP.yaml#step4a` etc.) can reference dataset
+      # types produced by tasks outside that subset (e.g. step4a's
+      # getTemplate consumes a coadd produced upstream in step3). Without a
+      # butler registry, pipe_base can only infer such a dataset type's
+      # storage class from its producing task in the *same* graph, and fails
+      # with `KeyError: '<UNKNOWN>'` when the producer isn't present. The
+      # image has a fully-initialized (but stopped) repo baked in at $REPO -
+      # start it and pass `-b $REPO` so subset builds resolve dataset types
+      # against its registry instead. The whole-pipeline builds below don't
+      # strictly need this (every producer is already in the graph) but it's
+      # harmless to pass -b there too for consistency.
       #
       # Both the whole-pipeline validation and the per-subset visualization
       # generation run in this one `docker run` (one `pip install .`, one
@@ -74,14 +86,21 @@ jobs:
 
               pip install .
 
-              pipetask build -p pipelines/flat.yaml
-              pipetask build -p pipelines/bias.yaml
-              pipetask build -p pipelines/DRP.yaml
+              # The image already has a fully-initialized butler repo baked
+              # in at \$REPO (see Dockerfile: db create, register-instrument,
+              # write-curated-calibrations, defects, register-skymap all ran
+              # at build time). Reuse it instead of redoing that setup here -
+              # it was stopped at the end of the build, so just start it.
+              proc-decam db start \$REPO
+
+              pipetask build -b \$REPO -p pipelines/flat.yaml
+              pipetask build -b \$REPO -p pipelines/bias.yaml
+              pipetask build -b \$REPO -p pipelines/DRP.yaml
 
               for subset in step0 step1 step1b step2a step2b step2c step2d step2e step2f step3a step3b step3c step3d step4a step4b step4d step4e step4f; do
                 out=pipelines/DRP/\$subset
                 mkdir -p \$out
-                pipetask build -p \"pipelines/DRP.yaml#\$subset\" --pipeline-dot \"\$out/pipeline.dot\"
+                pipetask build -b \$REPO -p \"pipelines/DRP.yaml#\$subset\" --pipeline-dot \"\$out/pipeline.dot\"
                 dot \"\$out/pipeline.dot\" -Tsvg > \"\$out/pipeline.svg\"
                 dot \"\$out/pipeline.dot\" -Tpng > \"\$out/pipeline.png\"
               done
