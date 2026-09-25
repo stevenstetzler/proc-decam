@@ -23,9 +23,8 @@ jobs:
     needs: build-image
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
       packages: read
-      pull-requests: write
     steps:
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
@@ -34,8 +33,15 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      # Explicitly check out the PR's head branch rather than the default
+      # merge-commit ref `pull_request` events use: the visualization commit
+      # below is pushed straight back to that branch, and pushing a
+      # merge-ref checkout would insert a spurious merge commit and diverge
+      # from the actual branch history.
       - name: Checkout proc-decam
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref || github.ref }}
 
       # Whether to publish the visualizations built below: the build itself
       # always runs (it's the CI check that these pipeline files are valid),
@@ -81,10 +87,9 @@ jobs:
       # `chmod -R a+rw .` can't touch those (different uid across the bind
       # mount) - splitting this into two steps failed on exactly that.
       #
-      # Renders to pipelines/**/pipeline.{dot,svg,png,jpg,pdf} (gitignored),
-      # currently discarded when the job ends. Publishing these (e.g.
-      # committed to a docs/gh-pages branch for a pipeline preview page) is
-      # scoped out separately.
+      # Renders to pipelines/**/pipeline.{dot,svg,png,jpg,pdf}, which are
+      # tracked in git so they're browsable directly on GitHub - committed
+      # back to the PR branch below when they change.
       - name: Build pipelines and generate DRP visualizations
         shell: bash
         run: |
@@ -116,62 +121,24 @@ jobs:
               '
             "
 
-      # GitHub's comment API only accepts Markdown text, not file uploads,
-      # so there's no way to embed the images themselves without a public
-      # URL for them to point at (planned separately, alongside the
-      # docs/gh-pages publishing setup). Until then, link to this run's
-      # workflow artifact instead - only when one of the visualized files
-      # actually changed in this PR.
-      - name: Upload changed pipeline visualizations
-        if: steps.changed.outputs.pipelines == 'true'
-        uses: actions/upload-artifact@v4
-        with:
-          name: pipeline-visualizations
-          path: pipelines/**/pipeline.pdf
-          if-no-files-found: error
-
-      # GitHub always issues a read-only GITHUB_TOKEN for `pull_request` runs
-      # triggered by a fork PR into this repo - the `permissions:` block
-      # above can't override that - so posting a comment would 403 on any
-      # PR from a fork (e.g. one opened against dirac-institute/proc-decam
-      # from a personal fork). Skip it there; the artifact upload above
-      # still runs either way.
-      - name: Comment on PR with a link to the visualizations
-        if: steps.changed.outputs.pipelines == 'true' && github.event.pull_request.head.repo.full_name == github.repository
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const marker = "<!-- pipeline-viz-comment -->";
-            const changedFiles = "${{ steps.changed.outputs.pipelines_files }}".split(",");
-            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
-            const body = [
-              marker,
-              "**Pipeline visualizations updated** for:",
-              "",
-              ...changedFiles.map((f) => `- \`${f}\``),
-              "",
-              `Rendered subset diagrams (PDF) are attached to [this workflow run](${runUrl}) under Artifacts.`,
-            ].join("\n");
-
-            const comments = await github.rest.issues.listComments({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.issue.number,
-            });
-            const existing = comments.data.find((c) => c.body.includes(marker));
-
-            if (existing) {
-              await github.rest.issues.updateComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                comment_id: existing.id,
-                body,
-              });
-            } else {
-              await github.rest.issues.createComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: context.issue.number,
-                body,
-              });
-            }
+      # Pipeline visualizations are tracked in git, so a change only needs a
+      # commit back to the PR branch - no artifact upload, no separate
+      # comment linking off to one. GitHub always issues a read-only
+      # GITHUB_TOKEN for `pull_request` runs triggered by a fork PR into this
+      # repo - the `permissions:` block above can't override that - so a
+      # push would 403 on any PR from a fork (e.g. one opened against
+      # dirac-institute/proc-decam from a personal fork). Skip it there; the
+      # build above (which is the actual CI check that these pipeline files
+      # are valid) still runs either way.
+      - name: Commit updated pipeline visualizations
+        if: steps.changed.outputs.pipelines == 'true' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add pipelines/bias pipelines/flat pipelines/DRP
+          if git diff --cached --quiet; then
+            echo "No visualization changes to commit"
+          else
+            git commit -m "Update pipeline visualizations [skip ci]"
+            git push origin "HEAD:${{ github.head_ref || github.ref_name }}"
+          fi
