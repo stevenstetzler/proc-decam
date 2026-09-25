@@ -1,0 +1,14 @@
+digraph Pipeline {
+graph [splines="ortho", nodesep="0.5", ranksep="0.75"];
+node [shape="box", fontname="Monospace", fontsize="14", margin="0.2,0.1", penwidth="3"];
+edge [color="black", arrowsize="1.5", penwidth="1.5", pad="10mm"];
+"makeCcdVisitTable:2" [style="filled", color="black", fillcolor="#B1F2EF", label=<<TABLE BORDER="0" CELLPADDING="5"><TR><TD ALIGN="LEFT"><B><FONT POINT-SIZE="18">makeCcdVisitTable</FONT></B></TD></TR><TR><TD ALIGN="LEFT">lsst.pipe.tasks.postprocess.MakeCcdVisitTableTask</TD></TR><TR><TD ALIGN="LEFT"><I>dimensions:</I>&nbsp;{instrument}</TD></TR></TABLE>>];
+"finalVisitSummary:0" [style="rounded,filled,bold", color="#00BABC", fillcolor="#F5F5F5", label=<<TABLE BORDER="0" CELLPADDING="5"><TR><TD ALIGN="LEFT"><B><FONT POINT-SIZE="18">finalVisitSummary</FONT></B></TD></TR><TR><TD ALIGN="LEFT"><I>dimensions:</I>&nbsp;{visit}</TD></TR><TR><TD ALIGN="LEFT"><I>storage class:</I>&nbsp;ExposureCatalog</TD></TR></TABLE>>];
+"ccdVisitTable:0" [style="rounded,filled,bold", color="#00BABC", fillcolor="#F5F5F5", label=<<TABLE BORDER="0" CELLPADDING="5"><TR><TD ALIGN="LEFT"><B><FONT POINT-SIZE="18">ccdVisitTable</FONT></B></TD></TR><TR><TD ALIGN="LEFT"><I>dimensions:</I>&nbsp;{instrument}</TD></TR><TR><TD ALIGN="LEFT"><I>storage class:</I>&nbsp;DataFrame</TD></TR></TABLE>>];
+"makeVisitTable:2" [style="filled", color="black", fillcolor="#B1F2EF", label=<<TABLE BORDER="0" CELLPADDING="5"><TR><TD ALIGN="LEFT"><B><FONT POINT-SIZE="18">makeVisitTable</FONT></B></TD></TR><TR><TD ALIGN="LEFT">lsst.pipe.tasks.postprocess.MakeVisitTableTask</TD></TR><TR><TD ALIGN="LEFT"><I>dimensions:</I>&nbsp;{instrument}</TD></TR></TABLE>>];
+"visitTable:0" [style="rounded,filled,bold", color="#00BABC", fillcolor="#F5F5F5", label=<<TABLE BORDER="0" CELLPADDING="5"><TR><TD ALIGN="LEFT"><B><FONT POINT-SIZE="18">visitTable</FONT></B></TD></TR><TR><TD ALIGN="LEFT"><I>dimensions:</I>&nbsp;{instrument}</TD></TR><TR><TD ALIGN="LEFT"><I>storage class:</I>&nbsp;DataFrame</TD></TR></TABLE>>];
+"makeCcdVisitTable:2" -> "ccdVisitTable:0";
+"finalVisitSummary:0" -> "makeCcdVisitTable:2";
+"finalVisitSummary:0" -> "makeVisitTable:2";
+"makeVisitTable:2" -> "visitTable:0";
+}

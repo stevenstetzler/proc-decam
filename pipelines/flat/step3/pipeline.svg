@@ -21,12 +21,12 @@
 <!-- flat:0 -->
 <g id="node4" class="node">
 <title>flat:0</title>
-<path fill="#f5f5f5" stroke="#00babc" stroke-width="3" d="M501,-102C501,-102 160,-102 160,-102 154,-102 148,-96 148,-90 148,-90 148,-12 148,-12 148,-6 154,0 160,0 160,0 501,0 501,0 507,0 513,-6 513,-12 513,-12 513,-90 513,-90 513,-96 507,-102 501,-102"/>
-<text text-anchor="start" x="169.5" y="-74.6" font-family="Monospace" font-weight="bold" font-size="18.00">flat</text>
-<text text-anchor="start" x="169.5" y="-45.8" font-family="Monospace" font-style="italic" font-size="14.00">dimensions:</text>
-<text text-anchor="start" x="260.5" y="-45.8" font-family="Monospace" font-size="14.00"> {detector, physical_filter}</text>
-<text text-anchor="start" x="169.5" y="-18.8" font-family="Monospace" font-style="italic" font-size="14.00">storage class:</text>
-<text text-anchor="start" x="285.5" y="-18.8" font-family="Monospace" font-size="14.00"> ExposureF</text>
+<path fill="#f5f5f5" stroke="#00babc" stroke-width="3" d="M496.5,-102C496.5,-102 164.5,-102 164.5,-102 158.5,-102 152.5,-96 152.5,-90 152.5,-90 152.5,-12 152.5,-12 152.5,-6 158.5,0 164.5,0 164.5,0 496.5,0 496.5,0 502.5,0 508.5,-6 508.5,-12 508.5,-12 508.5,-90 508.5,-90 508.5,-96 502.5,-102 496.5,-102"/>
+<text text-anchor="start" x="173.5" y="-74.6" font-family="Monospace" font-weight="bold" font-size="18.00">flat</text>
+<text text-anchor="start" x="173.5" y="-45.8" font-family="Monospace" font-style="italic" font-size="14.00">dimensions:</text>
+<text text-anchor="start" x="264.5" y="-45.8" font-family="Monospace" font-size="14.00"> {detector, physical_filter}</text>
+<text text-anchor="start" x="173.5" y="-18.8" font-family="Monospace" font-style="italic" font-size="14.00">storage class:</text>
+<text text-anchor="start" x="289.5" y="-18.8" font-family="Monospace" font-size="14.00"> ExposureF</text>
 </g>
 <!-- cpFlatCombine:2&#45;&gt;flat:0 -->
 <g id="edge1" class="edge">

@@ -1,0 +1,19 @@
+digraph Pipeline {
+graph [splines="ortho", nodesep="0.5", ranksep="0.75"];
+node [shape="box", fontname="Monospace", fontsize="14", margin="0.2,0.1", penwidth="3"];
+edge [color="black", arrowsize="1.5", penwidth="1.5", pad="10mm"];
+"makeDirectWarp:2" [style="filled", color="black", fillcolor="#B1F2EF", label=<<TABLE BORDER="0" CELLPADDING="5"><TR><TD ALIGN="LEFT"><B><FONT POINT-SIZE="18">makeDirectWarp</FONT></B></TD></TR><TR><TD ALIGN="LEFT">lsst.pipe.tasks.make_direct_warp.MakeDirectWarpTask</TD></TR><TR><TD ALIGN="LEFT"><I>dimensions:</I>&nbsp;{patch, visit}</TD></TR></TABLE>>];
+"finalVisitSummary:0" [style="rounded,filled,bold", color="#00BABC", fillcolor="#F5F5F5", label=<<TABLE BORDER="0" CELLPADDING="5"><TR><TD ALIGN="LEFT"><B><FONT POINT-SIZE="18">finalVisitSummary</FONT></B></TD></TR><TR><TD ALIGN="LEFT"><I>dimensions:</I>&nbsp;{visit}</TD></TR><TR><TD ALIGN="LEFT"><I>storage class:</I>&nbsp;ExposureCatalog</TD></TR></TABLE>>];
+"skyMap:0" [style="rounded,filled,bold", color="#00BABC", fillcolor="#F5F5F5", label=<<TABLE BORDER="0" CELLPADDING="5"><TR><TD ALIGN="LEFT"><B><FONT POINT-SIZE="18">skyMap</FONT></B></TD></TR><TR><TD ALIGN="LEFT"><I>dimensions:</I>&nbsp;{skymap}</TD></TR><TR><TD ALIGN="LEFT"><I>storage class:</I>&nbsp;SkyMap</TD></TR></TABLE>>];
+"calexp:0" [style="rounded,filled,bold", color="#00BABC", fillcolor="#F5F5F5", label=<<TABLE BORDER="0" CELLPADDING="5"><TR><TD ALIGN="LEFT"><B><FONT POINT-SIZE="18">calexp</FONT></B></TD></TR><TR><TD ALIGN="LEFT"><I>dimensions:</I>&nbsp;{detector, visit}</TD></TR><TR><TD ALIGN="LEFT"><I>storage class:</I>&nbsp;ExposureF</TD></TR></TABLE>>];
+"deepCoadd_directWarp:0" [style="rounded,filled,bold", color="#00BABC", fillcolor="#F5F5F5", label=<<TABLE BORDER="0" CELLPADDING="5"><TR><TD ALIGN="LEFT"><B><FONT POINT-SIZE="18">deepCoadd_directWarp</FONT></B></TD></TR><TR><TD ALIGN="LEFT"><I>dimensions:</I>&nbsp;{patch, visit}</TD></TR><TR><TD ALIGN="LEFT"><I>storage class:</I>&nbsp;ExposureF</TD></TR></TABLE>>];
+"makePsfMatchedWarp:2" [style="filled", color="black", fillcolor="#B1F2EF", label=<<TABLE BORDER="0" CELLPADDING="5"><TR><TD ALIGN="LEFT"><B><FONT POINT-SIZE="18">makePsfMatchedWarp</FONT></B></TD></TR><TR><TD ALIGN="LEFT">lsst.pipe.tasks.make_psf_matched_warp.MakePsfMatchedWarpTask</TD></TR><TR><TD ALIGN="LEFT"><I>dimensions:</I>&nbsp;{patch, visit}</TD></TR></TABLE>>];
+"deepCoadd_psfMatchedWarp:0" [style="rounded,filled,bold", color="#00BABC", fillcolor="#F5F5F5", label=<<TABLE BORDER="0" CELLPADDING="5"><TR><TD ALIGN="LEFT"><B><FONT POINT-SIZE="18">deepCoadd_psfMatchedWarp</FONT></B></TD></TR><TR><TD ALIGN="LEFT"><I>dimensions:</I>&nbsp;{patch, visit}</TD></TR><TR><TD ALIGN="LEFT"><I>storage class:</I>&nbsp;ExposureF</TD></TR></TABLE>>];
+"makeDirectWarp:2" -> "deepCoadd_directWarp:0";
+"finalVisitSummary:0" -> "makeDirectWarp:2";
+"skyMap:0" -> "makeDirectWarp:2";
+"skyMap:0" -> "makePsfMatchedWarp:2";
+"calexp:0" -> "makeDirectWarp:2";
+"deepCoadd_directWarp:0" -> "makePsfMatchedWarp:2";
+"makePsfMatchedWarp:2" -> "deepCoadd_psfMatchedWarp:0";
+}

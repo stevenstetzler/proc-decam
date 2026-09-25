@@ -1,0 +1,20 @@
+digraph Pipeline {
+graph [splines="ortho", nodesep="0.5", ranksep="0.75"];
+node [shape="box", fontname="Monospace", fontsize="14", margin="0.2,0.1", penwidth="3"];
+edge [color="black", arrowsize="1.5", penwidth="1.5", pad="10mm"];
+"mergeDetections:2" [style="filled", color="black", fillcolor="#B1F2EF", label=<<TABLE BORDER="0" CELLPADDING="5"><TR><TD ALIGN="LEFT"><B><FONT POINT-SIZE="18">mergeDetections</FONT></B></TD></TR><TR><TD ALIGN="LEFT">lsst.pipe.tasks.mergeDetections.MergeDetectionsTask</TD></TR><TR><TD ALIGN="LEFT"><I>dimensions:</I>&nbsp;{patch}</TD></TR></TABLE>>];
+"deepCoadd_det:0" [style="rounded,filled,bold", color="#00BABC", fillcolor="#F5F5F5", label=<<TABLE BORDER="0" CELLPADDING="5"><TR><TD ALIGN="LEFT"><B><FONT POINT-SIZE="18">deepCoadd_det</FONT></B></TD></TR><TR><TD ALIGN="LEFT"><I>dimensions:</I>&nbsp;{band, patch}</TD></TR><TR><TD ALIGN="LEFT"><I>storage class:</I>&nbsp;SourceCatalog</TD></TR></TABLE>>];
+"skyMap:0" [style="rounded,filled,bold", color="#00BABC", fillcolor="#F5F5F5", label=<<TABLE BORDER="0" CELLPADDING="5"><TR><TD ALIGN="LEFT"><B><FONT POINT-SIZE="18">skyMap</FONT></B></TD></TR><TR><TD ALIGN="LEFT"><I>dimensions:</I>&nbsp;{skymap}</TD></TR><TR><TD ALIGN="LEFT"><I>storage class:</I>&nbsp;SkyMap</TD></TR></TABLE>>];
+"deepCoadd_mergeDet:0" [style="rounded,filled,bold", color="#00BABC", fillcolor="#F5F5F5", label=<<TABLE BORDER="0" CELLPADDING="5"><TR><TD ALIGN="LEFT"><B><FONT POINT-SIZE="18">deepCoadd_mergeDet</FONT></B></TD></TR><TR><TD ALIGN="LEFT"><I>dimensions:</I>&nbsp;{patch}</TD></TR><TR><TD ALIGN="LEFT"><I>storage class:</I>&nbsp;SourceCatalog</TD></TR></TABLE>>];
+"deblend:2" [style="filled", color="black", fillcolor="#B1F2EF", label=<<TABLE BORDER="0" CELLPADDING="5"><TR><TD ALIGN="LEFT"><B><FONT POINT-SIZE="18">deblend</FONT></B></TD></TR><TR><TD ALIGN="LEFT">lsst.pipe.tasks.deblendCoaddSourcesPipeline.DeblendCoaddSourcesMultiTask</TD></TR><TR><TD ALIGN="LEFT"><I>dimensions:</I>&nbsp;{patch}</TD></TR></TABLE>>];
+"deepCoadd_calexp:0" [style="rounded,filled,bold", color="#00BABC", fillcolor="#F5F5F5", label=<<TABLE BORDER="0" CELLPADDING="5"><TR><TD ALIGN="LEFT"><B><FONT POINT-SIZE="18">deepCoadd_calexp</FONT></B></TD></TR><TR><TD ALIGN="LEFT"><I>dimensions:</I>&nbsp;{band, patch}</TD></TR><TR><TD ALIGN="LEFT"><I>storage class:</I>&nbsp;ExposureF</TD></TR></TABLE>>];
+"deepCoadd_scarletModelData:0" [style="rounded,filled,bold", color="#00BABC", fillcolor="#F5F5F5", label=<<TABLE BORDER="0" CELLPADDING="5"><TR><TD ALIGN="LEFT"><B><FONT POINT-SIZE="18">deepCoadd_scarletModelData</FONT></B></TD></TR><TR><TD ALIGN="LEFT"><I>dimensions:</I>&nbsp;{patch}</TD></TR><TR><TD ALIGN="LEFT"><I>storage class:</I>&nbsp;ScarletModelData</TD></TR></TABLE>>];
+"deepCoadd_deblendedCatalog:0" [style="rounded,filled,bold", color="#00BABC", fillcolor="#F5F5F5", label=<<TABLE BORDER="0" CELLPADDING="5"><TR><TD ALIGN="LEFT"><B><FONT POINT-SIZE="18">deepCoadd_deblendedCatalog</FONT></B></TD></TR><TR><TD ALIGN="LEFT"><I>dimensions:</I>&nbsp;{patch}</TD></TR><TR><TD ALIGN="LEFT"><I>storage class:</I>&nbsp;SourceCatalog</TD></TR></TABLE>>];
+"mergeDetections:2" -> "deepCoadd_mergeDet:0";
+"deepCoadd_det:0" -> "mergeDetections:2";
+"skyMap:0" -> "mergeDetections:2";
+"deepCoadd_mergeDet:0" -> "deblend:2";
+"deblend:2" -> "deepCoadd_scarletModelData:0";
+"deblend:2" -> "deepCoadd_deblendedCatalog:0";
+"deepCoadd_calexp:0" -> "deblend:2";
+}

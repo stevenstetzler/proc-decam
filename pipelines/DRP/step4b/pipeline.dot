@@ -1,0 +1,17 @@
+digraph Pipeline {
+graph [splines="ortho", nodesep="0.5", ranksep="0.75"];
+node [shape="box", fontname="Monospace", fontsize="14", margin="0.2,0.1", penwidth="3"];
+edge [color="black", arrowsize="1.5", penwidth="1.5", pad="10mm"];
+"detectAndMeasureDiaSources:2" [style="filled", color="black", fillcolor="#B1F2EF", label=<<TABLE BORDER="0" CELLPADDING="5"><TR><TD ALIGN="LEFT"><B><FONT POINT-SIZE="18">detectAndMeasureDiaSources</FONT></B></TD></TR><TR><TD ALIGN="LEFT">lsst.ip.diffim.detectAndMeasure.DetectAndMeasureTask</TD></TR><TR><TD ALIGN="LEFT"><I>dimensions:</I>&nbsp;{detector, visit}</TD></TR></TABLE>>];
+"deepDiff_differenceExp:0" [style="rounded,filled,bold", color="#00BABC", fillcolor="#F5F5F5", label=<<TABLE BORDER="0" CELLPADDING="5"><TR><TD ALIGN="LEFT"><B><FONT POINT-SIZE="18">deepDiff_differenceExp</FONT></B></TD></TR><TR><TD ALIGN="LEFT"><I>dimensions:</I>&nbsp;{detector, visit}</TD></TR><TR><TD ALIGN="LEFT"><I>storage class:</I>&nbsp;ExposureF</TD></TR></TABLE>>];
+"deepDiff_diaSrc:0" [style="rounded,filled,bold", color="#00BABC", fillcolor="#F5F5F5", label=<<TABLE BORDER="0" CELLPADDING="5"><TR><TD ALIGN="LEFT"><B><FONT POINT-SIZE="18">deepDiff_diaSrc</FONT></B></TD></TR><TR><TD ALIGN="LEFT"><I>dimensions:</I>&nbsp;{detector, visit}</TD></TR><TR><TD ALIGN="LEFT"><I>storage class:</I>&nbsp;SourceCatalog</TD></TR></TABLE>>];
+"transformDiaSourceCat:2" [style="filled", color="black", fillcolor="#B1F2EF", label=<<TABLE BORDER="0" CELLPADDING="5"><TR><TD ALIGN="LEFT"><B><FONT POINT-SIZE="18">transformDiaSourceCat</FONT></B></TD></TR><TR><TD ALIGN="LEFT">lsst.ap.association.transformDiaSourceCatalog.TransformDiaSourceCatalogTask</TD></TR><TR><TD ALIGN="LEFT"><I>dimensions:</I>&nbsp;{detector, visit}</TD></TR></TABLE>>];
+"deepDiff_diaSrcTable:0" [style="rounded,filled,bold", color="#00BABC", fillcolor="#F5F5F5", label=<<TABLE BORDER="0" CELLPADDING="5"><TR><TD ALIGN="LEFT"><B><FONT POINT-SIZE="18">deepDiff_diaSrcTable</FONT></B></TD></TR><TR><TD ALIGN="LEFT"><I>dimensions:</I>&nbsp;{detector, visit}</TD></TR><TR><TD ALIGN="LEFT"><I>storage class:</I>&nbsp;DataFrame</TD></TR></TABLE>>];
+"b077f871:0" [style="rounded,filled,bold", color="#00BABC", fillcolor="#F5F5F5", label=<<TABLE BORDER="0" CELLPADDING="5"><TR><TD ALIGN="LEFT"><B><FONT POINT-SIZE="18">injected_calexp</FONT></B></TD></TR><TR><TD ALIGN="LEFT"><B><FONT POINT-SIZE="18">deepDiff_matchedExp</FONT></B></TD></TR><TR><TD ALIGN="LEFT"><B><FONT POINT-SIZE="18">deepDiff_differenceTempExp</FONT></B></TD></TR><TR><TD ALIGN="LEFT"><I>dimensions:</I>&nbsp;{detector, visit}</TD></TR><TR><TD ALIGN="LEFT"><I>storage class:</I>&nbsp;ExposureF</TD></TR></TABLE>>];
+"detectAndMeasureDiaSources:2" -> "deepDiff_differenceExp:0";
+"detectAndMeasureDiaSources:2" -> "deepDiff_diaSrc:0";
+"deepDiff_differenceExp:0" -> "transformDiaSourceCat:2";
+"deepDiff_diaSrc:0" -> "transformDiaSourceCat:2";
+"transformDiaSourceCat:2" -> "deepDiff_diaSrcTable:0";
+"b077f871:0" -> "detectAndMeasureDiaSources:2";
+}

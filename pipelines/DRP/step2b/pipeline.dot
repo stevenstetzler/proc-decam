@@ -1,0 +1,12 @@
+digraph Pipeline {
+graph [splines="ortho", nodesep="0.5", ranksep="0.75"];
+node [shape="box", fontname="Monospace", fontsize="14", margin="0.2,0.1", penwidth="3"];
+edge [color="black", arrowsize="1.5", penwidth="1.5", pad="10mm"];
+"isolatedStarAssociation:2" [style="filled", color="black", fillcolor="#B1F2EF", label=<<TABLE BORDER="0" CELLPADDING="5"><TR><TD ALIGN="LEFT"><B><FONT POINT-SIZE="18">isolatedStarAssociation</FONT></B></TD></TR><TR><TD ALIGN="LEFT">lsst.pipe.tasks.isolatedStarAssociation.IsolatedStarAssociationTask</TD></TR><TR><TD ALIGN="LEFT"><I>dimensions:</I>&nbsp;{instrument, tract}</TD></TR></TABLE>>];
+"skyMap:0" [style="rounded,filled,bold", color="#00BABC", fillcolor="#F5F5F5", label=<<TABLE BORDER="0" CELLPADDING="5"><TR><TD ALIGN="LEFT"><B><FONT POINT-SIZE="18">skyMap</FONT></B></TD></TR><TR><TD ALIGN="LEFT"><I>dimensions:</I>&nbsp;{skymap}</TD></TR><TR><TD ALIGN="LEFT"><I>storage class:</I>&nbsp;SkyMap</TD></TR></TABLE>>];
+"preSourceTable_visit:0" [style="rounded,filled,bold", color="#00BABC", fillcolor="#F5F5F5", label=<<TABLE BORDER="0" CELLPADDING="5"><TR><TD ALIGN="LEFT"><B><FONT POINT-SIZE="18">preSourceTable_visit</FONT></B></TD></TR><TR><TD ALIGN="LEFT"><I>dimensions:</I>&nbsp;{visit}</TD></TR><TR><TD ALIGN="LEFT"><I>storage class:</I>&nbsp;DataFrame</TD></TR></TABLE>>];
+"2e69bcb2:0" [style="rounded,filled,bold", color="#00BABC", fillcolor="#F5F5F5", label=<<TABLE BORDER="0" CELLPADDING="5"><TR><TD ALIGN="LEFT"><B><FONT POINT-SIZE="18">isolated_star_sources</FONT></B></TD></TR><TR><TD ALIGN="LEFT"><B><FONT POINT-SIZE="18">isolated_star_cat</FONT></B></TD></TR><TR><TD ALIGN="LEFT"><I>dimensions:</I>&nbsp;{instrument, tract}</TD></TR><TR><TD ALIGN="LEFT"><I>storage class:</I>&nbsp;DataFrame</TD></TR></TABLE>>];
+"isolatedStarAssociation:2" -> "2e69bcb2:0";
+"skyMap:0" -> "isolatedStarAssociation:2";
+"preSourceTable_visit:0" -> "isolatedStarAssociation:2";
+}

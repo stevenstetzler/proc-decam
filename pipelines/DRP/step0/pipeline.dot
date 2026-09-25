@@ -1,0 +1,12 @@
+digraph Pipeline {
+graph [splines="ortho", nodesep="0.5", ranksep="0.75"];
+node [shape="box", fontname="Monospace", fontsize="14", margin="0.2,0.1", penwidth="3"];
+edge [color="black", arrowsize="1.5", penwidth="1.5", pad="10mm"];
+"isrForCrosstalkSources:2" [style="filled", color="black", fillcolor="#B1F2EF", label=<<TABLE BORDER="0" CELLPADDING="5"><TR><TD ALIGN="LEFT"><B><FONT POINT-SIZE="18">isrForCrosstalkSources</FONT></B></TD></TR><TR><TD ALIGN="LEFT">lsst.ip.isr.isrTask.IsrTask</TD></TR><TR><TD ALIGN="LEFT"><I>dimensions:</I>&nbsp;{detector, exposure}</TD></TR></TABLE>>];
+"camera:0" [style="rounded,filled,bold", color="#00BABC", fillcolor="#F5F5F5", label=<<TABLE BORDER="0" CELLPADDING="5"><TR><TD ALIGN="LEFT"><B><FONT POINT-SIZE="18">camera</FONT></B></TD></TR><TR><TD ALIGN="LEFT"><I>dimensions:</I>&nbsp;{instrument}</TD></TR><TR><TD ALIGN="LEFT"><I>storage class:</I>&nbsp;Camera</TD></TR></TABLE>>];
+"raw:0" [style="rounded,filled,bold", color="#00BABC", fillcolor="#F5F5F5", label=<<TABLE BORDER="0" CELLPADDING="5"><TR><TD ALIGN="LEFT"><B><FONT POINT-SIZE="18">raw</FONT></B></TD></TR><TR><TD ALIGN="LEFT"><I>dimensions:</I>&nbsp;{detector, exposure}</TD></TR><TR><TD ALIGN="LEFT"><I>storage class:</I>&nbsp;Exposure</TD></TR></TABLE>>];
+"overscanRaw:0" [style="rounded,filled,bold", color="#00BABC", fillcolor="#F5F5F5", label=<<TABLE BORDER="0" CELLPADDING="5"><TR><TD ALIGN="LEFT"><B><FONT POINT-SIZE="18">overscanRaw</FONT></B></TD></TR><TR><TD ALIGN="LEFT"><I>dimensions:</I>&nbsp;{detector, exposure}</TD></TR><TR><TD ALIGN="LEFT"><I>storage class:</I>&nbsp;Exposure</TD></TR></TABLE>>];
+"isrForCrosstalkSources:2" -> "overscanRaw:0";
+"camera:0" -> "isrForCrosstalkSources:2" [style="dashed"];
+"raw:0" -> "isrForCrosstalkSources:2";
+}
