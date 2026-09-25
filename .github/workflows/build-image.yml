@@ -55,3 +55,6 @@ jobs:
           context: .
           push: true
           tags: ghcr.io/${{ github.repository }}:lsst-w_2024_34
+          build-args: |
+            PROC_DECAM_REPO=https://github.com/${{ github.repository }}.git
+            PROC_DECAM_VERSION=${{ github.sha }}

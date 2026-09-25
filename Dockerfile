@@ -1,4 +1,6 @@
 FROM lsstsqre/centos:7-stack-lsst_distrib-w_2024_34
+ARG PROC_DECAM_REPO=https://github.com/dirac-institute/proc-decam.git
+ARG PROC_DECAM_VERSION=w.2024.34
 USER root
 # install packages
 RUN yum -y install curl ca-certificates && yum clean all && \
@@ -15,7 +17,7 @@ WORKDIR /home/lsst
 ENV REPO="/home/lsst/repo" DATA="/home/lsst/data"
 RUN source /opt/lsst/software/stack/loadLSST.bash && \
     setup lsst_distrib && \
-    python -m pip install --no-cache-dir git+https://github.com/dirac-institute/proc-decam.git && \
+    python -m pip install --no-cache-dir "git+${PROC_DECAM_REPO}@${PROC_DECAM_VERSION}" && \
     proc-decam db create ${REPO} && \
     proc-decam db start ${REPO} && \
     butler register-instrument ${REPO} lsst.obs.decam.DarkEnergyCamera && \
