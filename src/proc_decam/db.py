@@ -76,7 +76,7 @@ def main():
     from pathlib import Path
     from tempfile import NamedTemporaryFile
 
-    parser = argparse.ArgumentParser(prog="proc-decam db")
+    parser = argparse.ArgumentParser()
     parser.add_argument("command", choices=["create", "start", "stop"], help="The command to execute")
     parser.add_argument("repo", type=Path, help="Path to the repository")
     parser.add_argument("--port", type=int, default=55432, help="Port number for the database server")

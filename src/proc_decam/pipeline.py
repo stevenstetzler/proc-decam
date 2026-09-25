@@ -56,7 +56,7 @@ def main():
     from lsst.daf.butler.registry import CollectionType
     import re
 
-    parser = argparse.ArgumentParser(prog="proc-decam pipeline")
+    parser = argparse.ArgumentParser()
     parser.add_argument("repo")
     parser.add_argument("proc_type")
     parser.add_argument("subset") # to support coadd/diff_drp replace nights with subset and add template-type and coadd-subset as an option...

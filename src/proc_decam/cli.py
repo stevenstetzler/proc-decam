@@ -1,6 +1,7 @@
 import importlib
 import argparse
 import logging
+import os
 import sys
 
 logging.basicConfig()
@@ -21,7 +22,8 @@ def main():
         parser.error("a subcommand is required")
     
     sub_idx = sys.argv.index(args.subcommand)
-    sys.argv = [sys.argv[0]] + sys.argv[sub_idx + 1:]
+    prog = os.path.basename(sys.argv[0])
+    sys.argv = [f"{prog} {args.subcommand}"] + sys.argv[sub_idx + 1:]
 
     module = importlib.import_module(f".{args.subcommand}", "proc_decam")
     if hasattr(module, "log"):

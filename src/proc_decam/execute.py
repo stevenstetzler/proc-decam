@@ -188,7 +188,7 @@ def main():
     Constructs a run name by appending the pipeline name and the current date to the input collection
     Updates the collection chain to include the completed run
     """
-    parser = argparse.ArgumentParser(prog="proc-decam execute")
+    parser = argparse.ArgumentParser()
     parser.add_argument("repo")
     parser.add_argument("parent")
     parser.add_argument("--pipeline")
