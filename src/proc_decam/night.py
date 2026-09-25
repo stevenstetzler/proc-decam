@@ -13,7 +13,6 @@ from functools import partial
 proc_to_obs = dict(
     bias="zero",
     flat="dome flat",
-    science="object",
     drp="object",
 )
 
@@ -240,10 +239,8 @@ def main():
                 inputs = [future]
                 futures.append(future)
 
-            elif proc_type in ["science", "drp", "diff_drp"]:
-                if proc_type == "science":
-                    steps = ["step0", "step1"]
-                elif proc_type == "drp":
+            elif proc_type in ["drp", "diff_drp"]:
+                if proc_type == "drp":
                     steps = ["step0", "step1", "step2a", "step2b", "step2c", "step2d", "step2e", "step2f", "step3a"]
                 elif proc_type == "diff_drp":
                     steps = ["step4a", "step4b", "step4d", "step4e", "step4f"] # "step4c", 

@@ -7,7 +7,7 @@ The choice is:
 
 inputs: 
 - nights: regex match against collections in the butler
-- {bias, flat, science}
+- {bias, flat, drp}
 - steps: execute these steps in order
 - where: data query
 
@@ -28,7 +28,6 @@ logger = logging.getLogger(__name__)
 pipelines = dict(
     bias="bias.yaml",
     flat="flat.yaml",
-    science="science.yaml",
     drp="DRP.yaml",
     coadd={
         "mean": "mean-template.yaml",
