@@ -131,7 +131,7 @@ jobs:
       # build above (which is the actual CI check that these pipeline files
       # are valid) still runs either way.
       - name: Commit updated pipeline visualizations
-        if: steps.changed.outputs.pipelines == 'true' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
+        if: (steps.changed.outputs.pipelines == 'true' || github.event_name == 'workflow_dispatch') && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
