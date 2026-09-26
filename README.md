@@ -59,7 +59,7 @@ A single (or multiple) night(s) of the survey (or a subset of the data contained
 ```bash
 $ proc-decam night --help
 usage: proc-decam night [-h] [--nights NIGHTS] [--image-dir IMAGE_DIR]
-                        [--proc-types PROC_TYPES [PROC_TYPES ...]]
+                        [--proc-types {bias,flat,drp,diff_drp} [{bias,flat,drp,diff_drp} ...]]
                         [--coadd-subset COADD_SUBSET]
                         [--template-type TEMPLATE_TYPE] [--where WHERE]
                         [--log-level LOG_LEVEL] [--slurm] [--pipeline-slurm]
@@ -74,7 +74,7 @@ options:
   -h, --help            show this help message and exit
   --nights NIGHTS
   --image-dir IMAGE_DIR
-  --proc-types PROC_TYPES [PROC_TYPES ...]
+  --proc-types {bias,flat,drp,diff_drp} [{bias,flat,drp,diff_drp} ...]
   --coadd-subset COADD_SUBSET
   --template-type TEMPLATE_TYPE
   --where WHERE

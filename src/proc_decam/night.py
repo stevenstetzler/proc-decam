@@ -28,7 +28,7 @@ def main():
     parser.add_argument("--nights", default=".*")
     # parser.add_argument("--steps", nargs="+")
     parser.add_argument("--image-dir", default="./data/images")
-    parser.add_argument("--proc-types", nargs="+", default=["bias", "flat", "drp"])
+    parser.add_argument("--proc-types", nargs="+", choices=["bias", "flat", "drp", "diff_drp"], default=["bias", "flat", "drp"])
     parser.add_argument("--coadd-subset", default=None)
     parser.add_argument("--template-type", default=None)
     parser.add_argument("--where")
