@@ -6,9 +6,14 @@ Install LSST Science Pipelines: https://pipelines.lsst.io/
 - This package has been tested with version `w_2024_34` of the Science Pipelines. 
 - Later version may break compatibility with this package due to the shared dependence on `parsl`, which has a quickly changing API.
 
-Install this package on top of the pipelines:
+## Usage
+
+Checkout this repository and install the code on top of the pipelines:
 ```
-$ python -m pip install git+https://github.com/dirac-institute/proc-decam.git
+$ git clone https://github.com/dirac-institute/proc-decam.git
+$ cd proc-decam
+$ python -m pip install .
+$ source ./bin/setup.sh
 ```
 
 Create LSST repository:
