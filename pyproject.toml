@@ -37,4 +37,6 @@ proc-decam = "proc_decam.cli:main"
 write_to = "src/proc_decam/_version.py"
 version_scheme = "guess-next-dev"
 local_scheme = "no-local-version"
+# Matches tags like w.2024.34 or v1.0.0 and extracts the numeric version part
+tag_regex = '^(?:[vVwW]\.?)?(?P<version>\d+(?:\.\d+)*)'
 

@@ -100,7 +100,7 @@ def get_auth_headers():
     email = os.environ.get("NOIRLAB_USER", None)
     password = os.environ.get("NOIRLAB_PASS", None)
 
-    credentials_file = os.path.join(os.enivon.get("PROC_DECAM_DIR"), "etc/noirlab.credentials")
+    credentials_file = os.path.join(os.environ.get("PROC_DECAM_DIR"), "etc/noirlab.credentials")
     if os.path.exists(credentials_file):
         with open(credentials_file, "r") as f:
             credentials = f.read().strip()

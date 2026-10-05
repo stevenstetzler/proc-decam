@@ -7,7 +7,7 @@ The choice is:
 
 inputs: 
 - nights: regex match against collections in the butler
-- {bias, flat, science}
+- {bias, flat, drp}
 - steps: execute these steps in order
 - where: data query
 
@@ -28,7 +28,6 @@ logger = logging.getLogger(__name__)
 pipelines = dict(
     bias="bias.yaml",
     flat="flat.yaml",
-    science="science.yaml",
     drp="DRP.yaml",
     coadd={
         "mean": "mean-template.yaml",
@@ -56,7 +55,7 @@ def main():
     from lsst.daf.butler.registry import CollectionType
     import re
 
-    parser = argparse.ArgumentParser(prog="proc-decam pipeline")
+    parser = argparse.ArgumentParser()
     parser.add_argument("repo")
     parser.add_argument("proc_type")
     parser.add_argument("subset") # to support coadd/diff_drp replace nights with subset and add template-type and coadd-subset as an option...

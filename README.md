@@ -2,16 +2,21 @@
 
 Process a DECam imaging survey using the LSST Science Pipelines.
 
-Install LSST Science Pipelines: https://pipelines.lsst.io/
+Install LSST Science Pipelines: https://pipelines.lsst.io/ (via [lsstinstall](https://pipelines.lsst.io/install/lsstinstall.html))
 - This package has been tested with version `w_2024_34` of the Science Pipelines. 
 - Later version may break compatibility with this package due to the shared dependence on `parsl`, which has a quickly changing API.
 
-Install this package on top of the pipelines:
+## Usage
+
+Checkout this repository and install the code on top of the pipelines:
 ```
-$ python -m pip install git+https://github.com/dirac-institute/proc-decam.git
+$ git clone https://github.com/dirac-institute/proc-decam.git
+$ cd proc-decam
+$ python -m pip install .
+$ source ./bin/setup.sh
 ```
 
-Create LSST repository:
+Create LSST repository (after loading the LSST Science Pipelines):
 ```bash
 $ butler create ./repo
 $ butler register-instrument ./repo lsst.obs.decam.DarkEnergyCamera
@@ -46,16 +51,21 @@ $ proc-decam refcats ./repo ./data/exposures.ecsv
 Ingest fakes:
 ```bash
 $ proc-decam fakes ./repo path/to/fakes.fits # astropy readable table with columns RA/DEC/MAG/BAND/EXPNUM
+$ proc-decam fakes ./repo path/to/fakes.fits --collection my_fakes # ingest into a custom collection (default: fakes)
 ```
 
 # Processing
 
 A single (or multiple) night(s) of the survey (or a subset of the data contained thereof) can be processed using the `proc-decam night` command, which constructs and executes a Parsl workflow that runs survey pipelines over the nights specified:
 ```bash
-$ usage: proc-decam [-h] [--nights NIGHTS] [--proc-types PROC_TYPES [PROC_TYPES ...]] [--where WHERE]
-                  [--log-level LOG_LEVEL] [--slurm] [--pipeline-slurm] [--provider PROVIDER]
-                  [--workers WORKERS]
-                  repo exposures
+$ proc-decam night --help
+usage: proc-decam night [-h] [--nights NIGHTS] [--image-dir IMAGE_DIR]
+                        [--proc-types {bias,flat,drp,diff_drp} [{bias,flat,drp,diff_drp} ...]]
+                        [--coadd-subset COADD_SUBSET]
+                        [--template-type TEMPLATE_TYPE] [--where WHERE]
+                        [--log-level LOG_LEVEL] [--slurm] [--pipeline-slurm]
+                        [--provider PROVIDER] [--workers WORKERS] [--debug]
+                        repo exposures
 
 positional arguments:
   repo
@@ -64,13 +74,17 @@ positional arguments:
 options:
   -h, --help            show this help message and exit
   --nights NIGHTS
-  --proc-types PROC_TYPES [PROC_TYPES ...]
+  --image-dir IMAGE_DIR
+  --proc-types {bias,flat,drp,diff_drp} [{bias,flat,drp,diff_drp} ...]
+  --coadd-subset COADD_SUBSET
+  --template-type TEMPLATE_TYPE
   --where WHERE
   --log-level LOG_LEVEL
   --slurm
   --pipeline-slurm
   --provider PROVIDER
   --workers WORKERS, -J WORKERS
+  --debug
 ```
 Nights processed are controlled with the a regular expression passed to `--nights`, while data subsets are controlled with `--where`, respecting the semantics of the LSST Science Pipelines Butler query system. Parallelism of the survey processing pipeline is controlled with `-J`, while parallelism of the execution of the LSST Science Pipelines is controlled with the `J` environment variable, e.g.:
 ```
@@ -168,9 +182,11 @@ Data dependences across subsets of the data (nights and coadd subsets) are chain
 ```
 For example, master bias calibrations for night `20190401` are stored in the collection `20190401/bias` while a mean clip coadd for the year `2019` is stored in the collection `2019/meanclip/coadd` and difference images for night `20190401` using the `2019` coadd will be in `20190401/2019/meanclip/diff_drp`. The different components of the `proc-decam` package are internally aware of this naming scheme and keeps the collection naming consistent to handle automatic data dependency chaining. The `proc-decam collection` command can also be used to create collections that utilize this naming scheme:
 ```bash
-$ usage: proc-decam [-h] [--coadd-subset COADD_SUBSET] [--template-type TEMPLATE_TYPE] [--log-level LOG_LEVEL]
-                  [--overwrite]
-                  repo proc_type subset
+$ proc-decam collection --help
+usage: proc-decam collection [-h] [--coadd-subset COADD_SUBSET]
+                             [--template-type TEMPLATE_TYPE]
+                             [--log-level LOG_LEVEL] [--overwrite]
+                             repo proc_type subset
 
 positional arguments:
   repo
